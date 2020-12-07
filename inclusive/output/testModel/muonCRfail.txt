@@ -1,0 +1,16 @@
+# Datacard for <Channel (muonCRfail) instance at 0x7f2b292cb790> generated on 2020-12-07 16:34:31.138327
+imax 1 # number of categories ('bins' but here we are using shape templates)
+jmax 1 # number of samples minus 1
+kmax 1 # number of nuisance parameters
+shapes * muonCRfail testModel.root testModel:muonCRfail_$PROCESS testModel:muonCRfail_$PROCESS_$SYSTEMATIC
+bin muonCRfail
+observation 199.000
+bin           muonCRfail   muonCRfail
+process            ttbar          QCD
+process                1            2
+rate              62.496      131.775
+CMS_jec lnN  0.986/1.017  1.007/0.994
+tqqeffSF extArg testModel.root:testModel
+tqqnormSF extArg testModel.root:testModel
+tqqeffSF_effect_muonCRfail_ttbar rateParam muonCRfail ttbar (((1-@0)*0.1377421879670199)+1) tqqeffSF
+tqqnormSF_effect_muonCRfail_ttbar rateParam muonCRfail ttbar (1*@0) tqqnormSF

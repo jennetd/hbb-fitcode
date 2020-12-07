@@ -1,0 +1,40 @@
+# Datacard for <Channel (ptbin2fail) instance at 0x7f2b2933eb50> generated on 2020-12-07 16:34:31.087594
+imax 1 # number of categories ('bins' but here we are using shape templates)
+jmax 10 # number of samples minus 1
+kmax 3 # number of nuisance parameters
+shapes * ptbin2fail testModel.root testModel:ptbin2fail_$PROCESS testModel:ptbin2fail_$PROCESS_$SYSTEMATIC
+bin ptbin2fail
+observation 23655.000
+bin                  ptbin2fail   ptbin2fail   ptbin2fail   ptbin2fail   ptbin2fail   ptbin2fail   ptbin2fail   ptbin2fail   ptbin2fail   ptbin2fail  ptbin2fail
+process                     ggF          VBF           WH           ZH          ttH        ttbar      singlet        Zjets        Wjets           VV         qcd
+process                      -4           -3           -2           -1            0            1            2            3            4            5           6
+rate                      3.004        1.520        1.808        0.943        1.103     1640.114      319.800     6832.958    14898.802      188.463       1.000
+CMS_jec lnN         1.013/0.989  0.995/1.007  1.029/0.974  0.991/1.011  0.991/1.012  0.965/1.040  1.030/0.972  0.992/1.011  1.002/1.000  1.030/0.972           -
+CMS_lumi lnN              1.027        1.027        1.027        1.027        1.027        1.027        1.027        1.027        1.027        1.027           -
+CMS_msdScale shape        1.000        1.000        1.000        1.000        1.000        1.000        1.000        1.000        1.000        1.000           -
+ptbin2fail_qcd_bin11 extArg testModel.root:testModel
+ptbin2fail_qcd_bin12 extArg testModel.root:testModel
+ptbin2fail_qcd_bin13 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin0 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin1 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin10 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin14 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin15 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin16 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin17 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin18 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin19 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin2 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin20 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin21 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin3 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin4 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin5 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin6 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin7 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin8 extArg testModel.root:testModel
+qcdparam_ptbin2_msdbin9 extArg testModel.root:testModel
+tqqeffSF extArg testModel.root:testModel
+tqqnormSF extArg testModel.root:testModel
+tqqeffSF_effect_ptbin2fail_ttbar rateParam ptbin2fail ttbar (((1-@0)*0.12034408170187554)+1) tqqeffSF
+tqqnormSF_effect_ptbin2fail_ttbar rateParam ptbin2fail ttbar (1*@0) tqqnormSF
