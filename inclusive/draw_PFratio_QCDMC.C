@@ -8,7 +8,7 @@
 using namespace RooFit;
 using namespace RooStats;
 
-void draw(){
+void draw_PFratio_QCDMC(){
 
   //  RooWorkspace* ws = w[i];
 
