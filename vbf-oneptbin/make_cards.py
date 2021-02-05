@@ -11,15 +11,7 @@ rl.util.install_roofit_helpers()
 rl.ParametericSample.PreferRooParametricHist = False
 import pandas as pd
 
-def expo_sample(norm, scale, obs):
-    cdf = scipy.stats.expon.cdf(scale=scale, x=obs.binning) * norm
-    return (np.diff(cdf), obs.binning, obs.name)
-
-def gaus_sample(norm, loc, scale, obs):
-    cdf = scipy.stats.norm.cdf(loc=loc, scale=scale, x=obs.binning) * norm
-    return (np.diff(cdf), obs.binning, obs.name)
-
-def get_template(samp, passed, ptbin, obs):
+def get_template(samp, passed, obs):
     # open root file of histograms
     f = ROOT.TFile.Open("signalregion.root")
 
@@ -30,11 +22,13 @@ def get_template(samp, passed, ptbin, obs):
         name += "_fail"
 
     h = f.Get(name)
-    hist = []
-    for i in range(2,h.GetNbinsX()+1):
-        hist += [h.GetBinContent(i)]
+    sumw = []
+    sumw2 = []
+    for i in range(1,h.GetNbinsX()+1):
+        sumw += [h.GetBinContent(i)]
+        sumw2 += [h.GetBinError(i)*h.GetBinError(i)]
 
-    return (np.array(hist), obs.binning, obs.name)
+    return (np.array(sumw), obs.binning, obs.name, np.array(sumw2))
 
 def get_template_muonCR(samp, passed, obs):
     # open root file of histograms                                                                                                      
@@ -47,23 +41,27 @@ def get_template_muonCR(samp, passed, obs):
         name += "_fail"
 
     h = f.Get(name)
-    hist = []
-    for i in range(2,h.GetNbinsX()+1):
-        hist += [h.GetBinContent(i)]
+#    h.Rebin(h.GetNbinsX())
 
-    return (np.array(hist), obs.binning, obs.name)
+    sumw = []
+    sumw2 = []
+    for i in range(1,h.GetNbinsX()+1):
+        sumw += [h.GetBinContent(i)]
+        sumw2 += [h.GetBinError(i)*h.GetBinError(i)]
+
+    return (np.array(sumw), obs.binning, obs.name, np.array(sumw2))
 
 def test_rhalphabet(tmpdir):
     throwPoisson = True #False
 
-    jec = rl.NuisanceParameter('CMS_jec', 'lnN')
-    massScale = rl.NuisanceParameter('CMS_msdScale', 'shape')
-    lumi = rl.NuisanceParameter('CMS_lumi', 'lnN')
-    tqqeffSF = rl.IndependentParameter('tqqeffSF', 1., 0, 10)
-    tqqnormSF = rl.IndependentParameter('tqqnormSF', 1., 0, 10)
+#    jec = rl.NuisanceParameter('CMS_jec', 'lnN')
+#    massScale = rl.NuisanceParameter('CMS_msdScale', 'shape')
+#    lumi = rl.NuisanceParameter('CMS_lumi', 'lnN')
 
-#    ptbins = np.array([450, 500, 550, 600, 675, 800, 1200])
-    ptbins = np.array([450,1200])
+    tqqeffSF = rl.IndependentParameter('tqqeffSF', 1., 0, 20)
+    tqqnormSF = rl.IndependentParameter('tqqnormSF', 1., 0, 20)
+
+    ptbins = np.array([450, 1200])
     npt = len(ptbins) - 1
     msdbins = np.linspace(47, 201, 23)
     msd = rl.Observable('msd', msdbins)
@@ -86,24 +84,25 @@ def test_rhalphabet(tmpdir):
         qcdmodel.addChannel(passCh)
 
         # QCD templates from file
-        failTempl = get_template("QCD", 0, ptbin+1, obs=msd) #
-        passTempl = get_template("QCD", 1, ptbin+1, obs=msd) #
+        failTempl = get_template("QCD", 0, obs=msd) #
+        passTempl = get_template("QCD", 1, obs=msd) #
 
-        failCh.setObservation(failTempl)
-        passCh.setObservation(passTempl)
+        failCh.setObservation(failTempl, read_sumw2=True)
+        passCh.setObservation(passTempl, read_sumw2=True)
 
-        qcdfail += failCh.getObservation().sum()
-        qcdpass += passCh.getObservation().sum()
-
+        qcdfail += sum([val[0] for val in failCh.getObservation()])
+        qcdpass += sum([val[0] for val in passCh.getObservation()])
 
     qcdeff = qcdpass / qcdfail
+    print("Inclusive P/F from Monte Carlo = " + str(qcdeff))
 
     # initial values
-    initial_vals = np.array([[-0.724877067901, 2.08405991802, 0.7834449503],
-                             [0.70392199007, 2.07323502814, 0.046337412277],
-                             [0.768381509607, 0.457222806859, 0.662486260717]])
+    print("Initial fit values read from file initial_vals.csv")
+    initial_vals = np.genfromtxt('initial_vals.csv')
+    initial_vals = initial_vals.reshape(1,3)
+    print(initial_vals)
 
-    tf_MCtempl = rl.BernsteinPoly("tf_MCtempl", (2, 2), ['pt', 'rho'], init_params=initial_vals, limits=(-10, 10))
+    tf_MCtempl = rl.BernsteinPoly("tf_MCtempl", (0,2), ['pt','rho'], init_params=initial_vals, limits=(-20, 20))
     tf_MCtempl_params = qcdeff * tf_MCtempl(ptscaled, rhoscaled)
     for ptbin in range(npt):
         failCh = qcdmodel['ptbin%dfail' % ptbin]
@@ -114,7 +113,8 @@ def test_rhalphabet(tmpdir):
         qcdparams = np.array([rl.IndependentParameter('qcdparam_ptbin%d_msdbin%d' % (ptbin, i), 0) for i in range(msd.nbins)])
         sigmascale = 10.
         scaledparams = failObs * (1 + sigmascale/np.maximum(1., np.sqrt(failObs)))**qcdparams
-        fail_qcd = rl.ParametericSample('ptbin%dfail_qcd' % ptbin, rl.Sample.BACKGROUND, msd, scaledparams)
+
+        fail_qcd = rl.ParametericSample('ptbin%dfail_qcd' % ptbin, rl.Sample.BACKGROUND, msd, scaledparams[0])
         failCh.addSample(fail_qcd)
         pass_qcd = rl.TransferFactorSample('ptbin%dpass_qcd' % ptbin, rl.Sample.BACKGROUND, tf_MCtempl_params[ptbin, :], fail_qcd)
         passCh.addSample(pass_qcd)
@@ -136,18 +136,15 @@ def test_rhalphabet(tmpdir):
     qcdfit_ws.add(qcdfit)
     qcdfit_ws.writeToFile(os.path.join(str(tmpdir), 'testModel_qcdfit.root'))
 
-    if qcdfit.status() != 0:
-        raise RuntimeError('Could not fit qcd')
-
-    # Set parameters to fitted values
+    # Set parameters to fitted values  
     allparams = dict(zip(qcdfit.nameArray(), qcdfit.valueArray()))
     for i, p in enumerate(tf_MCtempl.parameters.reshape(-1)):
         p.value = allparams[p.name]
 
-    # plot pt vs msd
-#    tf_MCtempl_vals = tf_MCtempl(ptscaled, rhoscaled, nominal=True)
+    if qcdfit.status() != 0:
+        raise RuntimeError('Could not fit qcd')
 
-    # arrays for plotting pt vs msd
+    # arrays for plotting pt vs msd                                                                                                     
     pts_plot = np.linspace(450,1200,15)
     ptpts_plot, msdpts_plot = np.meshgrid(pts_plot[:-1] + 0.5 * np.diff(pts_plot), msdbins[:-1] + 0.5 * np.diff(msdbins), indexing='ij')
     ptpts_plot_scaled = (ptpts_plot - 450.) / (1200. - 450.)
@@ -167,8 +164,8 @@ def test_rhalphabet(tmpdir):
     df_msdpt["pt"] = ptpts_plot.reshape(-1)
     df_msdpt["eQCDMC"] = tf_MCtempl_vals.reshape(-1)
     df_msdpt.to_csv("msdpt.csv", header=False)
-    
-    # arrays for plotting pt vs rho
+
+    # arrays for plotting pt vs rho                                                                                                    
     rhos_plot = np.linspace(-6,-2.1,23)
     ptpts_plot, rhopts_plot = np.meshgrid(pts_plot[:-1] + 0.5*np.diff(pts_plot), rhos_plot[:-1] + 0.5 * np.diff(rhos_plot), indexing='ij')
     ptpts_plot_scaled = (ptpts_plot - 450.) / (1200. - 450.)
@@ -181,28 +178,27 @@ def test_rhalphabet(tmpdir):
     rhopts_plot_scaled = rhopts_plot_scaled[validbins_plot]
 
     tf_MCtempl_vals = tf_MCtempl(ptpts_plot_scaled, rhopts_plot_scaled, nominal=True)
-    
+
     df_rhopt = pd.DataFrame([])
     df_rhopt["rho"] = rhopts_plot.reshape(-1)
     df_rhopt["pt"] = ptpts_plot.reshape(-1)
     df_rhopt["eQCDMC"] = tf_MCtempl_vals.reshape(-1)
     df_rhopt.to_csv("rhopt.csv", header=False)
 
-    
-
     param_names = [p.name for p in tf_MCtempl.parameters.reshape(-1)]
     decoVector = rl.DecorrelatedNuisanceVector.fromRooFitResult(tf_MCtempl.name + '_deco', qcdfit, param_names)
     tf_MCtempl.parameters = decoVector.correlated_params.reshape(tf_MCtempl.parameters.shape)
     tf_MCtempl_params_final = tf_MCtempl(ptscaled, rhoscaled)
-    tf_dataResidual = rl.BernsteinPoly("tf_dataResidual", (2, 2), ['pt', 'rho'], limits=(0, 10))
+    tf_dataResidual = rl.BernsteinPoly("tf_dataResidual", (0, 2), ['pt', 'rho'], limits=(-20, 20))
     tf_dataResidual_params = tf_dataResidual(ptscaled, rhoscaled)
     tf_params = qcdeff * tf_MCtempl_params_final * tf_dataResidual_params
 
     # build actual fit model now
     model = rl.Model("testModel")
 
+    # exclud QCD from MC samps
     samps = ['ggF','VBF','WH','ZH','ttH','ttbar','singlet','Zjets','Wjets','VV']
-    sigs = ['VBF']
+    sigs = ['ggF','VBF','WH','ZH','ttH']
 
     for ptbin in range(npt):
         for region in ['pass', 'fail']:
@@ -216,47 +212,21 @@ def test_rhalphabet(tmpdir):
             
             for sName in samps:
 
-                templates[sName] = get_template(sName, region=="pass", ptbin+1, obs=msd) 
+                templates[sName] = get_template(sName, isPass, obs=msd) 
 
                 # some mock expectations
                 templ = templates[sName]
                 stype = rl.Sample.SIGNAL if sName in sigs else rl.Sample.BACKGROUND
                 sample = rl.TemplateSample(ch.name + '_' + sName, stype, templ)
 
-                # mock systematics
-                jecup_ratio = np.random.normal(loc=1, scale=0.05, size=msd.nbins)
-                msdUp = np.linspace(0.9, 1.1, msd.nbins)
-                msdDn = np.linspace(1.2, 0.8, msd.nbins)
-
-                # for jec we set lnN prior, shape will automatically be converted to norm systematic
-                sample.setParamEffect(jec, jecup_ratio)
-                sample.setParamEffect(massScale, msdUp, msdDn)
-                sample.setParamEffect(lumi, 1.027)
-
                 ch.addSample(sample)
 
-            # make up a data_obs, with possibly different yield values
-#            templates = {
-#                'ttH': gaus_sample(norm=ptnorm*(100 if isPass else 300), loc=80, scale=8, obs=msd),
-#                'WH': gaus_sample(norm=ptnorm*(100 if isPass else 300), loc=80, scale=8, obs=msd),
-#                'ZH': gaus_sample(norm=ptnorm*(200 if isPass else 100), loc=91, scale=8, obs=msd),
-#                'VBF': gaus_sample(norm=ptnorm*(40 if isPass else 80), loc=150, scale=20, obs=msd),
-#                'ggF': gaus_sample(norm=ptnorm*(20 if isPass else 5), loc=125, scale=8, obs=msd),
-#                'QCD': expo_sample(norm=ptnorm*(1e3 if isPass else 1e5), scale=40, obs=msd),
-#                'ttbar': expo_sample(norm=ptnorm*(1e2 if isPass else 1e5), scale=40, obs=msd),
-#                'singlet': expo_sample(norm=ptnorm*(1e2 if isPass else 1e3), scale=40, obs=msd),
-#                'Zjets': expo_sample(norm=ptnorm*(1e2 if isPass else 1e3), scale=40, obs=msd),
-#                'Wjets': expo_sample(norm=ptnorm*(1e2 if isPass else 1e3), scale=40, obs=msd),
-#                'VV': expo_sample(norm=ptnorm*(1e1 if isPass else 1e2), scale=40, obs=msd),
-#            }
-            yields = sum(tpl[0] for tpl in templates.values())
-            if throwPoisson:
-                yields = np.random.poisson(yields)
-            data_obs = (yields, msd.binning, msd.name)
-            ch.setObservation(data_obs)
+            data_obs = get_template("data", isPass, obs=msd)
+            ch.setObservation(data_obs, read_sumw2=True)
 
             # drop bins outside rho validity
             mask = validbins[ptbin]
+
             # blind bins 11, 12, 13
             mask[11:14] = False
             ch.mask = mask
@@ -266,14 +236,14 @@ def test_rhalphabet(tmpdir):
         passCh = model['ptbin%dpass' % ptbin]
 
         qcdparams = np.array([rl.IndependentParameter('qcdparam_ptbin%d_msdbin%d' % (ptbin, i), 0) for i in range(msd.nbins)])
-        initial_qcd = failCh.getObservation().astype(float)  # was integer, and numpy complained about subtracting float from it
+        initial_qcd = failCh.getObservation()[0].astype(float)  # was integer, and numpy complained about subtracting float from it
 
-#        for sample in failCh:
-#            print(sample)
-#            initial_qcd -= sample.getExpectation(nominal=True)
-#            print(initial_qcd)
+        for sample in failCh:
+            initial_qcd -= sample.getExpectation(nominal=True)
+
         if np.any(initial_qcd < 0.):
             raise ValueError("initial_qcd negative for some bins..", initial_qcd)
+
         sigmascale = 10  # to scale the deviation from initial
         scaledparams = initial_qcd * (1 + sigmascale/np.maximum(1., np.sqrt(initial_qcd)))**qcdparams
         fail_qcd = rl.ParametericSample('ptbin%dfail_qcd' % ptbin, rl.Sample.BACKGROUND, msd, scaledparams)
@@ -291,35 +261,23 @@ def test_rhalphabet(tmpdir):
 
     # Fill in muon CR
     templates = {}
-
+    samps = ['ttbar','QCD','singlet','Zjets','Wjets','VV']
     for region in ['pass', 'fail']:
         ch = rl.Channel("muonCR%s" % (region, ))
         model.addChannel(ch)
 
         isPass = region == 'pass'
-        templates['ttbar'] = get_template_muonCR('ttbar',isPass,obs=msd); 
-        templates['QCD'] = get_template_muonCR('QCD',isPass,obs=msd);
 
-        for sName, templ in templates.items():
+        for sName in samps:
+            templates[sName] = get_template_muonCR(sName, isPass, obs=msd)
+
             stype = rl.Sample.BACKGROUND
-            sample = rl.TemplateSample(ch.name + '_' + sName, stype, templ)
-
-            # mock systematics
-            jecup_ratio = np.random.normal(loc=1, scale=0.05, size=msd.nbins)
-            sample.setParamEffect(jec, jecup_ratio)
+            sample = rl.TemplateSample(ch.name + '_' + sName, stype, templates[sName])
 
             ch.addSample(sample)
 
-        # make up a data_obs
-#        templates = {
-#            'ttbar': gaus_sample(norm=10*(30 if isPass else 60), loc=150, scale=20, obs=msd),
-#            'QCD': expo_sample(norm=10*(5e2 if isPass else 1e3), scale=40, obs=msd),
-#        }
-        yields = sum(tpl[0] for tpl in templates.values())
-        if throwPoisson:
-            yields = np.random.poisson(yields)
-        data_obs = (yields, msd.binning, msd.name)
-        ch.setObservation(data_obs)
+        data_obs = get_template_muonCR("muondata", isPass, obs=msd)
+        ch.setObservation(data_obs, read_sumw2=True)
 
     tqqpass = model['muonCRpass_ttbar']
     tqqfail = model['muonCRfail_ttbar']
