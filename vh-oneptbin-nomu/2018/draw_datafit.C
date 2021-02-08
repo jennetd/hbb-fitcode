@@ -184,6 +184,15 @@ void draw(bool pass){
   l2.SetTextSize(textsize1);
   l2.DrawLatex(0.7,.92,year.c_str());
 
+  TLatex l3;
+  l3.SetNDC();
+  l3.SetTextFont(42);
+  l3.SetTextSize(textsize1);
+  string text ="DDB failing";
+  if( pass )
+    text = "DDB passing";
+  l3.DrawLatex(0.15,.82,text.c_str());
+
   pad2->cd();
   TH1D* TotalBkg_ratio = (TH1D*)TotalBkg->Clone("TotalBkg_ratio");
   TotalBkg_ratio->Divide(TotalBkg_ratio);

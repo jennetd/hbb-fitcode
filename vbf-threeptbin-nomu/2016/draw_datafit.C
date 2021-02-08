@@ -11,14 +11,14 @@ using namespace RooStats;
 string year = "35.9/fb, 2016";
 bool blind = true;
 
-void draw(bool pass){
+void draw(int index, bool pass){
 
   /* DATA */
   TH1D* data_obs;
   TFile* dataf = new TFile("signalregion.root");
-  data_obs = (TH1D*)dataf->Get("data_fail");
+  data_obs = (TH1D*)dataf->Get(("data_fail_pt"+to_string(index+1)).c_str());
   if( pass )
-    data_obs = (TH1D*)dataf->Get("data_pass");
+    data_obs = (TH1D*)dataf->Get(("data_pass_pt"+to_string(index+1)).c_str());
 
   // blind data!
   if( blind && pass ){                                                                                                   
@@ -32,9 +32,9 @@ void draw(bool pass){
   data_obs->SetMarkerStyle(20);
 
   string filename = "fitDiagnostics.root";
-  string name = "ptbin0fail";
+  string name = "ptbin"+to_string(index)+"fail";
   if( pass )
-    name = "ptbin0pass";
+    name = "ptbin"+to_string(index)+"pass";
   
   string histdirname = "shapes_fit_s/" + name;
 
@@ -188,9 +188,9 @@ void draw(bool pass){
   l3.SetNDC();
   l3.SetTextFont(42);
   l3.SetTextSize(textsize1);
-  string text ="DDB failing";
+  string text = "DDB failing, p_{T}^{H} bin "+to_string(index+1);
   if( pass )
-    text = "DDB passing";
+    text = "DDB passing, p_{T}^{H} bin "+to_string(index+1);
   l3.DrawLatex(0.15,.82,text.c_str());
 
   pad2->cd();
@@ -222,8 +222,14 @@ void draw(bool pass){
 
 void draw_datafit(){
 
-  draw(0);
-  draw(1);
+  draw(0,0);
+  draw(0,1);
+
+  draw(1,0);
+  draw(1,1);
+
+  draw(2,0);
+  draw(2,1);
 
   return 0;
 
