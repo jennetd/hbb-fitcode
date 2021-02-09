@@ -67,6 +67,7 @@ void draw(bool pass){
   /* VH */
   TH1D* VH = (TH1D*)f->Get((histdirname+"/WH").c_str());
   VH->Add((TH1D*)f->Get((histdirname+"/ZH").c_str()));
+  VH->Scale(7.0);
   VH->SetLineColor(kGreen+1);
   VH->SetMarkerColor(kGreen+1);
   VH->SetLineWidth(3);

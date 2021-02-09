@@ -66,6 +66,7 @@ void draw(bool pass){
 
   /* VBF */
   TH1D* VBF = (TH1D*)f->Get((histdirname+"/VBF").c_str());
+  VBF->Scale(7.0);
   VBF->SetLineColor(kGreen+1);
   VBF->SetMarkerColor(kGreen+1);
   VBF->SetLineWidth(3);
