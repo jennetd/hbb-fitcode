@@ -11,24 +11,14 @@ rl.util.install_roofit_helpers()
 rl.ParametericSample.PreferRooParametricHist = False
 import pandas as pd
 
-def expo_sample(norm, scale, obs):
-    cdf = scipy.stats.expon.cdf(scale=scale, x=obs.binning) * norm
-    return (np.diff(cdf), obs.binning, obs.name)
-
-def gaus_sample(norm, loc, scale, obs):
-    cdf = scipy.stats.norm.cdf(loc=loc, scale=scale, x=obs.binning) * norm
-    return (np.diff(cdf), obs.binning, obs.name)
-
-def get_template(samp, passed, ptbin, obs):
+def get_template(samp, passed, ptbin, obs, syst):
     # open root file of histograms
     f = ROOT.TFile.Open("signalregion.root")
 
-    name = samp
+    name = "fail_"
     if passed:
-        name += "_pass"
-    else:
-        name += "_fail"
-    name += "_pt"+str(ptbin)
+        name = "pass_"
+    name += "pt"+str(ptbin)+"_"+samp+"_"+syst
 
     h = f.Get(name)
     sumw = []
@@ -43,13 +33,14 @@ def get_template_muonCR(samp, passed, obs):
     # open root file of histograms                                                                                                      
     f = ROOT.TFile.Open("muonCR.root")
 
-    name = samp
+    name = "fail_"
     if passed:
-        name += "_pass"
-    else:
-        name += "_fail"
+        name = "pass_"
+    name += samp+"_nominal"
 
     h = f.Get(name)
+#    h.Rebin(h.GetNbinsX())
+
     sumw = []
     sumw2 = []
     for i in range(1,h.GetNbinsX()+1):
@@ -64,6 +55,7 @@ def test_rhalphabet(tmpdir):
 #    jec = rl.NuisanceParameter('CMS_jec', 'lnN')
 #    massScale = rl.NuisanceParameter('CMS_msdScale', 'shape')
 #    lumi = rl.NuisanceParameter('CMS_lumi', 'lnN')
+
     tqqeffSF = rl.IndependentParameter('tqqeffSF', 1., 0, 10)
     tqqnormSF = rl.IndependentParameter('tqqnormSF', 1., 0, 10)
 
@@ -90,8 +82,8 @@ def test_rhalphabet(tmpdir):
         qcdmodel.addChannel(passCh)
 
         # QCD templates from file
-        failTempl = get_template("QCD", 0, ptbin+1, obs=msd) #
-        passTempl = get_template("QCD", 1, ptbin+1, obs=msd) #
+        failTempl = get_template("QCD", 0, ptbin+1, obs=msd, syst="nominal") #
+        passTempl = get_template("QCD", 1, ptbin+1, obs=msd, syst="nominal") #
 
         failCh.setObservation(failTempl, read_sumw2=True)
         passCh.setObservation(passTempl, read_sumw2=True)
@@ -146,6 +138,7 @@ def test_rhalphabet(tmpdir):
     allparams = dict(zip(qcdfit.nameArray(), qcdfit.valueArray()))
     for i, p in enumerate(tf_MCtempl.parameters.reshape(-1)):
         p.value = allparams[p.name]
+        print(p.name,p.value)
 
     if qcdfit.status() != 0:
         raise RuntimeError('Could not fit qcd')
@@ -195,13 +188,14 @@ def test_rhalphabet(tmpdir):
     decoVector = rl.DecorrelatedNuisanceVector.fromRooFitResult(tf_MCtempl.name + '_deco', qcdfit, param_names)
     tf_MCtempl.parameters = decoVector.correlated_params.reshape(tf_MCtempl.parameters.shape)
     tf_MCtempl_params_final = tf_MCtempl(ptscaled, rhoscaled)
-    tf_dataResidual = rl.BernsteinPoly("tf_dataResidual", (2, 2), ['pt', 'rho'], limits=(0, 10))
+    tf_dataResidual = rl.BernsteinPoly("tf_dataResidual", (2, 2), ['pt', 'rho'], limits=(-10, 10))
     tf_dataResidual_params = tf_dataResidual(ptscaled, rhoscaled)
     tf_params = qcdeff * tf_MCtempl_params_final * tf_dataResidual_params
 
     # build actual fit model now
     model = rl.Model("testModel")
 
+    # exclud QCD from MC samps
     samps = ['ggF','VBF','WH','ZH','ttH','ttbar','singlet','Zjets','Wjets','VV']
     sigs = ['ggF','VBF','WH','ZH','ttH']
 
@@ -217,7 +211,7 @@ def test_rhalphabet(tmpdir):
             
             for sName in samps:
 
-                templates[sName] = get_template(sName, isPass, ptbin+1, obs=msd) 
+                templates[sName] = get_template(sName, isPass, ptbin+1, obs=msd, syst="nominal") 
 
                 # some mock expectations
                 templ = templates[sName]
@@ -226,16 +220,15 @@ def test_rhalphabet(tmpdir):
 
                 ch.addSample(sample)
 
-            data_obs = get_template("data", isPass, ptbin+1, obs=msd)
+            data_obs = get_template("data", isPass, ptbin+1, obs=msd, syst="nominal")
             ch.setObservation(data_obs, read_sumw2=True)
 
             # drop bins outside rho validity
             mask = validbins[ptbin]
 
             # blind bins 11, 12, 13
-            if isPass:
-                mask[11:14] = False
-                ch.mask = mask
+#            mask[11:14] = False
+#            ch.mask = mask
 
     for ptbin in range(npt):
         failCh = model['ptbin%dfail' % ptbin]
@@ -267,26 +260,22 @@ def test_rhalphabet(tmpdir):
 
     # Fill in muon CR
     templates = {}
-
+    samps = ['ttbar','QCD','singlet','Zjets','Wjets','VV']
     for region in ['pass', 'fail']:
         ch = rl.Channel("muonCR%s" % (region, ))
         model.addChannel(ch)
 
         isPass = region == 'pass'
-        templates['ttbar'] = get_template_muonCR('ttbar',isPass,obs=msd); 
-        templates['QCD'] = get_template_muonCR('QCD',isPass,obs=msd);
 
-        for sName, templ in templates.items():
+        for sName in samps:
+            templates[sName] = get_template_muonCR(sName, isPass, obs=msd)
+
             stype = rl.Sample.BACKGROUND
-            sample = rl.TemplateSample(ch.name + '_' + sName, stype, templ)
+            sample = rl.TemplateSample(ch.name + '_' + sName, stype, templates[sName])
 
             ch.addSample(sample)
 
-        data_obs = get_template("muondata", isPass, ptbin+1, obs=msd)
-#        yields = sum(tpl[0] for tpl in templates.values())
-#        if throwPoisson:
-#            yields = np.random.poisson(yields)
-#        data_obs = (yields, msd.binning, msd.name)
+        data_obs = get_template_muonCR("muondata", isPass, obs=msd)
         ch.setObservation(data_obs, read_sumw2=True)
 
     tqqpass = model['muonCRpass_ttbar']

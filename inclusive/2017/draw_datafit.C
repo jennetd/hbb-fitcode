@@ -8,33 +8,33 @@
 using namespace RooFit;
 using namespace RooStats;
 
-string year = "35.9/fb, 2016";
+string year = "41.5/fb, 2017";
 bool blind = true;
 
-void draw(bool pass, bool log=true){
+void draw(int index, bool pass){
 
   /* DATA */
   TH1D* data_obs;
   TFile* dataf = new TFile("signalregion.root");
-  data_obs = (TH1D*)dataf->Get("data_fail");
+  data_obs = (TH1D*)dataf->Get(("fail_pt"+to_string(index+1)+"_data_nominal").c_str());
   if( pass )
-    data_obs = (TH1D*)dataf->Get("data_pass");
+    data_obs = (TH1D*)dataf->Get(("pass_pt"+to_string(index+1)+"_data_nominal").c_str());
 
   // blind data!
   if( blind && pass ){                                                                                                   
     for(int i=10; i<14; i++){
       data_obs->SetBinContent(i,0);
     }                            
-  }                                                                                               
-                                                                                                                 
+  }                                                                                                          
+
   data_obs->SetLineColor(kBlack);
   data_obs->SetMarkerColor(kBlack);
   data_obs->SetMarkerStyle(20);
 
   string filename = "fitDiagnostics.root";
-  string name = "ptbin0fail";
+  string name = "ptbin"+to_string(index)+"fail";
   if( pass )
-    name = "ptbin0pass";
+    name = "ptbin"+to_string(index)+"pass";
   
   string histdirname = "shapes_fit_s/" + name;
 
@@ -62,88 +62,69 @@ void draw(bool pass, bool log=true){
   float textsize2 = 16/(pad2->GetWh()*pad2->GetAbsHNDC());
 
   pad1->cd();
-  if( log ) pad1->SetLogy();
+  pad1->SetLogy();
 
-  /* VBF */
-  TH1D* VBF = (TH1D*)f->Get((histdirname+"/VBF").c_str());
-  VBF->Scale(7.0);
-  VBF->SetLineColor(kGreen+1);
-  VBF->SetMarkerColor(kGreen+1);
-  VBF->SetLineWidth(3);
+  /* all Higgs */
+  TH1D* Higgs = (TH1D*)f->Get((histdirname+"/ggF").c_str());
+  Higgs->Add((TH1D*)f->Get((histdirname+"/VBF").c_str()));
+  Higgs->Add((TH1D*)f->Get((histdirname+"/WH").c_str()));
+  Higgs->Add((TH1D*)f->Get((histdirname+"/ZH").c_str()));
+  Higgs->Add((TH1D*)f->Get((histdirname+"/ttH").c_str()));
+  Higgs->Scale(7.0);
+  Higgs->SetLineColor(kGreen+1);
+  Higgs->SetMarkerColor(kGreen+1);
+  Higgs->SetLineWidth(3);
 
   THStack *bkg = new THStack("bkg","");
-
-  /* non-VBF Higgs */
-  TH1D* bkgHiggs = (TH1D*)f->Get((histdirname+"/ggF").c_str());
-  bkgHiggs->Add((TH1D*)f->Get((histdirname+"/WH").c_str()));
-  bkgHiggs->Add((TH1D*)f->Get((histdirname+"/ZH").c_str()));
-  bkgHiggs->Add((TH1D*)f->Get((histdirname+"/ttH").c_str()));
-  bkgHiggs->Scale(7.0); 
-  bkgHiggs->SetLineColor(kBlack);
-  bkgHiggs->SetFillColor(kOrange);
 
   /* VV */
   TH1D* VV = (TH1D*)f->Get((histdirname+"/VV").c_str());
   VV->Scale(7.0);
   VV->SetLineColor(kBlack);
   VV->SetFillColor(kOrange-3);
+  bkg->Add(VV);
 
   /* single t */
   TH1D* singlet = (TH1D*)f->Get((histdirname+"/singlet").c_str());
   singlet->Scale(7.0);
   singlet->SetLineColor(kBlack);
   singlet->SetFillColor(kPink+6);
+  bkg->Add(singlet);
 
   /* ttbar */
   TH1D* ttbar = (TH1D*)f->Get((histdirname+"/ttbar").c_str());
   ttbar->Scale(7.0);
   ttbar->SetLineColor(kBlack);
   ttbar->SetFillColor(kViolet-5);
+  bkg->Add(ttbar);
 
   /* Z + jets */
   TH1D* Zjets = (TH1D*)f->Get((histdirname+"/Zjets").c_str());
   Zjets->Scale(7.0);
   Zjets->SetLineColor(kBlack);
   Zjets->SetFillColor(kAzure-1);
+  bkg->Add(Zjets);
 
   /* W + jets */
   TH1D* Wjets = (TH1D*)f->Get((histdirname+"/Wjets").c_str());
   Wjets->Scale(7.0);
   Wjets->SetLineColor(kBlack);
   Wjets->SetFillColor(kAzure+8);
+  bkg->Add(Wjets);
 
   /* QCD */
   TH1D* qcd = (TH1D*)f->Get((histdirname+"/qcd").c_str());
   qcd->Scale(7.0);
   qcd->SetLineColor(kBlack);
   qcd->SetFillColor(kGray);
+  bkg->Add(qcd);
   
-  if( log ){
-    bkg->Add(bkgHiggs);
-    bkg->Add(VV);
-    bkg->Add(singlet);
-    bkg->Add(ttbar);
-    bkg->Add(Zjets);
-    bkg->Add(Wjets);
-    bkg->Add(qcd);
-  }
-  else{
-    bkg->Add(qcd);
-    bkg->Add(Wjets);
-    bkg->Add(Zjets);
-    bkg->Add(ttbar);
-    bkg->Add(singlet);
-    bkg->Add(VV);
-    bkg->Add(bkgHiggs);
-  }
-
   cout << "QCD: "     << qcd->Integral()     << endl;
   cout << "Wjets: "   << Wjets->Integral()   << endl;
   cout << "Zjets: "   << Zjets->Integral()   << endl;
   cout << "ttbar: "   << ttbar->Integral()   << endl;
   cout << "singlet: " << singlet->Integral() << endl;
   cout << "VV: "      << VV->Integral()      << endl;
-  cout << "bkgHiggs: " << bkgHiggs->Integral() << endl;
 
   /* total background */
   TH1D* TotalBkg = (TH1D*)f->Get((histdirname+"/total_background").c_str());
@@ -154,7 +135,6 @@ void draw(bool pass, bool log=true){
   TotalBkg->SetFillStyle(3001);
   double max = TotalBkg->GetMaximum();
   TotalBkg->GetYaxis()->SetRangeUser(0.1,1000*max);
-  if( !log ) TotalBkg->GetYaxis()->SetRangeUser(0,1.3*max);
   TotalBkg->GetYaxis()->SetTitleSize(textsize1);
   TotalBkg->GetYaxis()->SetLabelSize(textsize1);
   TotalBkg->GetYaxis()->SetTitle("Events / 7 GeV");
@@ -163,7 +143,7 @@ void draw(bool pass, bool log=true){
   TotalBkg->Draw("e2");
   bkg->Draw("histsame");
   TotalBkg->Draw("e2same");
-  VBF->Draw("histsame");
+  Higgs->Draw("histsame");
   data_obs->Draw("pesame");
   data_obs->Draw("axissame");
   
@@ -181,8 +161,7 @@ void draw(bool pass, bool log=true){
   leg->AddEntry(ttbar,"t#bar{t}","f");
   leg->AddEntry(singlet,"Single t","f");
   leg->AddEntry(VV,"VV","f");
-  leg->AddEntry(bkgHiggs,"Bkg. H","f");
-  leg->AddEntry(VBF,"VBF","l");
+  leg->AddEntry(Higgs,"Higgs","l");
 
   leg->Draw();
 
@@ -202,9 +181,9 @@ void draw(bool pass, bool log=true){
   l3.SetNDC();
   l3.SetTextFont(42);
   l3.SetTextSize(textsize1);
-  string text ="DDB failing";
+  string text = "DDB failing, p_{T}^{H} bin "+to_string(index+1);
   if( pass )
-    text = "DDB passing";
+    text = "DDB passing, p_{T}^{H} bin "+to_string(index+1);
   l3.DrawLatex(0.15,.82,text.c_str());
 
   pad2->cd();
@@ -217,6 +196,7 @@ void draw(bool pass, bool log=true){
   TotalBkg_ratio->SetMarkerSize(0);
   TotalBkg_ratio->Draw("e2");
 
+
   TH1D* data_obs_ratio = (TH1D*)data_obs->Clone("data_obs_ratio");
   data_obs_ratio->Divide(TotalBkg);
 
@@ -225,8 +205,6 @@ void draw(bool pass, bool log=true){
   
   TotalBkg_ratio->Draw("e2");
   data_obs_ratio->Draw("pesame");
-
-  if( !log ) name += "_lin";
 
   c->SaveAs((name+".png").c_str());
   c->SaveAs((name+".pdf").c_str());
@@ -237,11 +215,10 @@ void draw(bool pass, bool log=true){
 
 void draw_datafit(){
 
-  draw(0);
-  draw(1);
-
-  draw(0,0);
-  draw(1,0);
+  for(int i=0; i<6; i++){
+    draw(i,0);
+    draw(i,1);
+  }
 
   return 0;
 

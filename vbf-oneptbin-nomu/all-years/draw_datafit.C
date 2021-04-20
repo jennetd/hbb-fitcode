@@ -11,7 +11,7 @@ using namespace RooStats;
 string year = "137.3/fb, Run 2";
 bool blind = true;
 
-void draw(bool pass){
+void draw(bool pass, bool log=true){
 
   /* DATA */
   TH1D* data_obs;
@@ -26,7 +26,7 @@ void draw(bool pass){
       data_obs->SetBinContent(i,0);
     }                            
   }                                                                                               
-                                                                                                                             
+                                                                                                                 
   data_obs->SetLineColor(kBlack);
   data_obs->SetMarkerColor(kBlack);
   data_obs->SetMarkerStyle(20);
@@ -62,7 +62,7 @@ void draw(bool pass){
   float textsize2 = 16/(pad2->GetWh()*pad2->GetAbsHNDC());
 
   pad1->cd();
-  pad1->SetLogy();
+  if( log ) pad1->SetLogy();
 
   /* VBF */
   TH1D* VBF = (TH1D*)f->Get((histdirname+"/VBF").c_str());
@@ -78,53 +78,65 @@ void draw(bool pass){
   bkgHiggs->Add((TH1D*)f->Get((histdirname+"/WH").c_str()));
   bkgHiggs->Add((TH1D*)f->Get((histdirname+"/ZH").c_str()));
   bkgHiggs->Add((TH1D*)f->Get((histdirname+"/ttH").c_str()));
-  bkgHiggs->Scale(7.0);
+  bkgHiggs->Scale(7.0); 
   bkgHiggs->SetLineColor(kBlack);
   bkgHiggs->SetFillColor(kOrange);
-  bkg->Add(bkgHiggs);
 
   /* VV */
   TH1D* VV = (TH1D*)f->Get((histdirname+"/VV").c_str());
   VV->Scale(7.0);
   VV->SetLineColor(kBlack);
   VV->SetFillColor(kOrange-3);
-  bkg->Add(VV);
 
   /* single t */
   TH1D* singlet = (TH1D*)f->Get((histdirname+"/singlet").c_str());
   singlet->Scale(7.0);
   singlet->SetLineColor(kBlack);
   singlet->SetFillColor(kPink+6);
-  bkg->Add(singlet);
 
   /* ttbar */
   TH1D* ttbar = (TH1D*)f->Get((histdirname+"/ttbar").c_str());
   ttbar->Scale(7.0);
   ttbar->SetLineColor(kBlack);
   ttbar->SetFillColor(kViolet-5);
-  bkg->Add(ttbar);
 
   /* Z + jets */
   TH1D* Zjets = (TH1D*)f->Get((histdirname+"/Zjets").c_str());
   Zjets->Scale(7.0);
   Zjets->SetLineColor(kBlack);
   Zjets->SetFillColor(kAzure-1);
-  bkg->Add(Zjets);
 
   /* W + jets */
   TH1D* Wjets = (TH1D*)f->Get((histdirname+"/Wjets").c_str());
   Wjets->Scale(7.0);
   Wjets->SetLineColor(kBlack);
   Wjets->SetFillColor(kAzure+8);
-  bkg->Add(Wjets);
 
   /* QCD */
   TH1D* qcd = (TH1D*)f->Get((histdirname+"/qcd").c_str());
   qcd->Scale(7.0);
   qcd->SetLineColor(kBlack);
   qcd->SetFillColor(kGray);
-  bkg->Add(qcd);
   
+  if( log ){
+    bkg->Add(bkgHiggs);
+    bkg->Add(VV);
+    bkg->Add(singlet);
+    bkg->Add(ttbar);
+    bkg->Add(Zjets);
+    bkg->Add(Wjets);
+    bkg->Add(qcd);
+  }
+  else{
+    bkg->Add(qcd);
+    bkg->Add(Wjets);
+    bkg->Add(Zjets);
+    bkg->Add(ttbar);
+    bkg->Add(singlet);
+    bkg->Add(VV);
+    bkg->Add(bkgHiggs);
+  }
+
   cout << "QCD: "     << qcd->Integral()     << endl;
   cout << "Wjets: "   << Wjets->Integral()   << endl;
   cout << "Zjets: "   << Zjets->Integral()   << endl;
@@ -142,6 +154,7 @@ void draw(bool pass){
   TotalBkg->SetFillStyle(3001);
   double max = TotalBkg->GetMaximum();
   TotalBkg->GetYaxis()->SetRangeUser(0.1,1000*max);
+  if( !log ) TotalBkg->GetYaxis()->SetRangeUser(0,1.3*max);
   TotalBkg->GetYaxis()->SetTitleSize(textsize1);
   TotalBkg->GetYaxis()->SetLabelSize(textsize1);
   TotalBkg->GetYaxis()->SetTitle("Events / 7 GeV");
@@ -204,7 +217,6 @@ void draw(bool pass){
   TotalBkg_ratio->SetMarkerSize(0);
   TotalBkg_ratio->Draw("e2");
 
-
   TH1D* data_obs_ratio = (TH1D*)data_obs->Clone("data_obs_ratio");
   data_obs_ratio->Divide(TotalBkg);
 
@@ -213,6 +225,8 @@ void draw(bool pass){
   
   TotalBkg_ratio->Draw("e2");
   data_obs_ratio->Draw("pesame");
+
+  if( !log ) name += "_lin";
 
   c->SaveAs((name+".png").c_str());
   c->SaveAs((name+".pdf").c_str());
@@ -225,6 +239,9 @@ void draw_datafit(){
 
   draw(0);
   draw(1);
+
+  draw(0,0);
+  draw(1,0);
 
   return 0;
 

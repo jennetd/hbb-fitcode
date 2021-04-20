@@ -10,7 +10,11 @@ using namespace RooStats;
 
 void draw_PFratio_QCDMC(){
 
-  //  RooWorkspace* ws = w[i];
+  int bounds[7] = {450, 500, 550, 600, 675, 800, 1200};
+  string titles[6];
+  for(int i=0; i<6; i++){
+    titles[i] = "p_{T} #in ["+to_string(bounds[i])+", "+to_string(bounds[i+1])+"] GeV";
+  }
 
   TFile* f = new TFile("output/testModel_qcdfit.root");
   RooWorkspace* w = (RooWorkspace*)(f->Get("qcdfit_ws"));
@@ -24,8 +28,10 @@ void draw_PFratio_QCDMC(){
     RooPlot* frame1 = (*w->var("msd")).frame(23);
     (*w->pdf(("ptbin"+to_string(i)+"pass_qcd").c_str())).plotOn(frame1, LineColor(kRed));
     //    (*w->pdf(("ptbin"+to_string(i)+"pass").c_str())).plotOn(frame1, LineColor(kRed));
-    data_pass->plotOn(frame1, Rescale(1.0/data_pass->sumEntries()), DataError(RooAbsData::SumW2), MarkerColor(kBlack));
-    data_fail->plotOn(frame1, Rescale(1.0/data_fail->sumEntries()), LineColor(kBlue), MarkerColor(kBlue));
+    data_pass->plotOn(frame1, Rescale(1.0/data_pass->sumEntries()), DataError(RooAbsData::SumW2), 
+		      LineColor(kBlack), LineWidth(2), MarkerColor(kBlack));
+    data_fail->plotOn(frame1, Rescale(1.0/data_fail->sumEntries()), 
+		      LineColor(kBlue), LineWidth(2), MarkerColor(kBlue));
     /*
         TH1D* h_pass = (TH1D*)data_pass->createHistogram("data_pass",*w->var("msd"));
         TH1D* h_fail = (TH1D*)data_fail->createHistogram("data_fail",*w->var("msd"));
@@ -37,7 +43,7 @@ void draw_PFratio_QCDMC(){
     gPad->SetLeftMargin(0.15);
 
     frame1->SetMaximum(0.1);
-    frame1->SetTitle(("ptbin "+to_string(i)).c_str());
+    frame1->SetTitle(titles[i].c_str());
     frame1->SetYTitle("Events / 7 GeV");
     frame1->SetXTitle("m_{sd} [GeV]");
     frame1->Draw();
@@ -68,6 +74,10 @@ void draw_PFratio_QCDMC(){
 
     //    cout << (*w->pdf(("ptbin"+to_string(i)+"pass_qcd").c_str())).getNorm() << endl;
     c1->SaveAs(("ptbin"+to_string(i)+".png").c_str());
+
+    h_dum1->Delete();
+    h_dum2->Delete();
+    h_dum3->Delete();
   }
 
   return 0;
