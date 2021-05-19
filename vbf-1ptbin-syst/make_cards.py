@@ -11,15 +11,20 @@ rl.util.install_roofit_helpers()
 rl.ParametericSample.PreferRooParametricHist = False
 import pandas as pd
 
-def get_template(samp, passed, obs):
-    # open root file of histograms
+def syst_variation(numerator,denominator):
+    var = np.divide(numerator,denominator)
+    var[np.where(numerator==0)] = 1
+    var[np.where(denominator==0)] = 1
+    return var
+
+def get_template(samp, passed, obs, syst):
+
     f = ROOT.TFile.Open("signalregion.root")
 
-    name = samp
+    name = "fail_"
     if passed:
-        name += "_pass"
-    else:
-        name += "_fail"
+        name = "pass_"
+    name += samp+"_"+syst
 
     h = f.Get(name)
     sumw = []
@@ -31,17 +36,14 @@ def get_template(samp, passed, obs):
     return (np.array(sumw), obs.binning, obs.name, np.array(sumw2))
 
 def get_template_muonCR(samp, passed, obs):
-    # open root file of histograms                                                                                                      
     f = ROOT.TFile.Open("muonCR.root")
 
-    name = samp
+    name = "fail_"
     if passed:
-        name += "_pass"
-    else:
-        name += "_fail"
+        name = "pass_"
+    name += samp+"_nominal"
 
     h = f.Get(name)
-#    h.Rebin(h.GetNbinsX())
 
     sumw = []
     sumw2 = []
@@ -54,9 +56,22 @@ def get_template_muonCR(samp, passed, obs):
 def test_rhalphabet(tmpdir):
     throwPoisson = True #False
 
-#    jec = rl.NuisanceParameter('CMS_jec', 'lnN')
-#    massScale = rl.NuisanceParameter('CMS_msdScale', 'shape')
-#    lumi = rl.NuisanceParameter('CMS_lumi', 'lnN')
+    # experimental systematics
+    lumi = rl.NuisanceParameter('CMS_lumi', 'lnN')
+    jet_trigger = rl.NuisanceParameter('CMS_jet_trigger', 'lnN')
+    jes = rl.NuisanceParameter('CMS_jes', 'lnN')
+    jer = rl.NuisanceParameter('CMS_jer', 'lnN')
+    ues = rl.NuisanceParameter('CMS_ues', 'lnN')
+    btagWeight = rl.NuisanceParameter('CMS_btagWeight', 'lnN')
+    btagEffStat = rl.NuisanceParameter('CMS_btagEffStat', 'lnN')
+
+    # theory systematics
+    pdf_weight = rl.NuisanceParameter('PDF_weight', 'shape')
+    scale_ggF = rl.NuisanceParameter('scale_ggF', 'lnN')
+    scale_VBF = rl.NuisanceParameter('scale_VBF', 'lnN')
+    scale_VH = rl.NuisanceParameter('scale_VH', 'lnN')
+    scale_ttH = rl.NuisanceParameter('scale_ttH', 'lnN')
+    ps_weight = rl.NuisanceParameter('PS_weight', 'shape')
 
     tqqeffSF = rl.IndependentParameter('tqqeffSF', 1., 0, 20)
     tqqnormSF = rl.IndependentParameter('tqqnormSF', 1., 0, 20)
@@ -84,8 +99,8 @@ def test_rhalphabet(tmpdir):
         qcdmodel.addChannel(passCh)
 
         # QCD templates from file
-        failTempl = get_template("QCD", 0, obs=msd) #
-        passTempl = get_template("QCD", 1, obs=msd) #
+        failTempl = get_template("QCD", 0, obs=msd, syst="nominal") #
+        passTempl = get_template("QCD", 1, obs=msd, syst="nominal") #
 
         failCh.setObservation(failTempl, read_sumw2=True)
         passCh.setObservation(passTempl, read_sumw2=True)
@@ -197,8 +212,8 @@ def test_rhalphabet(tmpdir):
     model = rl.Model("testModel")
 
     # exclud QCD from MC samps
-    samps = ['ggF','VBF','WH','ZH','ttH','ttbar','singlet','Zjets','Wjets','VV']
-    sigs = ['ggF','VBF','WH','ZH','ttH']
+    samps = ['ggF','VBF','WH','ZH','ttbar','singlet','Zjets','Wjets','VV','ttH',]
+    sigs = ['VBF']
 
     for ptbin in range(npt):
         for region in ['pass', 'fail']:
@@ -212,24 +227,73 @@ def test_rhalphabet(tmpdir):
             
             for sName in samps:
 
-                templates[sName] = get_template(sName, isPass, obs=msd) 
+                templates[sName] = get_template(sName, isPass, obs=msd, syst="nominal") 
+                nominal = templates[sName][0]
 
                 # some mock expectations
                 templ = templates[sName]
                 stype = rl.Sample.SIGNAL if sName in sigs else rl.Sample.BACKGROUND
                 sample = rl.TemplateSample(ch.name + '_' + sName, stype, templ)
 
+                if sName != "QCD":
+                    sample.setParamEffect(lumi, 1.027)
+
+                    jet_trigger_up = syst_variation(get_template(sName, isPass, obs=msd, syst="jet_triggerUp")[0], nominal)
+                    jet_trigger_down = syst_variation(get_template(sName, isPass, obs=msd, syst="jet_triggerDown")[0], nominal)
+                    sample.setParamEffect(jet_trigger, jet_trigger_up, jet_trigger_down)
+
+                    jes_up = syst_variation(get_template(sName, isPass, obs=msd, syst="JESUp")[0], nominal)
+                    jes_down = syst_variation(get_template(sName, isPass, obs=msd, syst="JESDown")[0], nominal)
+                    sample.setParamEffect(jes, jes_up, jes_down)
+
+                    jer_up = syst_variation(get_template(sName, isPass, obs=msd, syst="JERUp")[0], nominal)
+                    jer_down = syst_variation(get_template(sName, isPass, obs=msd, syst="JERDown")[0], nominal)
+                    sample.setParamEffect(jer, jer_up, jer_down)
+                    
+                    ues_up = syst_variation(get_template(sName, isPass, obs=msd, syst="UESUp")[0], nominal)
+                    ues_down = syst_variation(get_template(sName, isPass, obs=msd, syst="UESDown")[0], nominal)
+                    sample.setParamEffect(ues, ues_up, ues_down)  
+                    
+                    btagWeight_up = syst_variation(get_template(sName, isPass, obs=msd, syst="btagWeightUp")[0], nominal)
+                    btagWeight_down = syst_variation(get_template(sName, isPass, obs=msd, syst="btagWeightDown")[0], nominal)
+                    sample.setParamEffect(btagWeight, btagWeight_up, btagWeight_down)
+                    
+                    btagEffStat_up = syst_variation(get_template(sName, isPass, obs=msd, syst="btagEffStatUp")[0], nominal)
+                    btagEffStat_down = syst_variation(get_template(sName, isPass, obs=msd, syst="btagEffStatDown")[0], nominal)
+                    sample.setParamEffect(btagEffStat, btagEffStat_up, btagEffStat_down)
+                
+                    pdf_weight_up = syst_variation(get_template(sName, isPass, obs=msd, syst="PDF_weightUp")[0], nominal)
+                    pdf_weight_down = syst_variation(get_template(sName, isPass, obs=msd, syst="PDF_weightDown")[0], nominal)
+                    sample.setParamEffect(pdf_weight, pdf_weight_up, pdf_weight_down)
+                
+                if sName == "ggF":
+                    scale_up = syst_variation(get_template(sName, isPass, obs=msd, syst="scalevar_7ptUp")[0], nominal)
+                    scale_down = syst_variation(get_template(sName, isPass, obs=msd, syst="scalevar_7ptDown")[0], nominal)
+                    sample.setParamEffect(scale_ggF, scale_up, scale_down)
+                if sName == "VBF":
+                    scale_up = syst_variation(get_template(sName, isPass, obs=msd, syst="scalevar_3ptUp")[0], nominal)
+                    scale_down = syst_variation(get_template(sName, isPass, obs=msd, syst="scalevar_3ptDown")[0], nominal)
+                    sample.setParamEffect(scale_VBF, scale_up, scale_down)
+                if sName == "VH":
+                    scale_up = syst_variation(get_template(sName, isPass, obs=msd, syst="scalevar_3ptUp")[0], nominal)
+                    scale_down = syst_variation(get_template(sName, isPass, obs=msd, syst="scalevar_3ptDown")[0], nominal)
+                    sample.setParamEffect(scale_VH, scale_up, scale_down)
+                if sName == "ttH":
+                    scale_up = syst_variation(get_template(sName, isPass, obs=msd, syst="scalevar_7ptUp")[0], nominal)
+                    scale_down = syst_variation(get_template(sName, isPass, obs=msd, syst="scalevar_7ptDown")[0], nominal)
+                    sample.setParamEffect(scale_ttH, scale_up, scale_down)
+
                 ch.addSample(sample)
 
-            data_obs = get_template("data", isPass, obs=msd)
+            data_obs = get_template("data", isPass, obs=msd, syst="nominal")
             ch.setObservation(data_obs, read_sumw2=True)
 
             # drop bins outside rho validity
             mask = validbins[ptbin]
 
             # blind bins 11, 12, 13
-            mask[11:14] = False
-            ch.mask = mask
+#            mask[11:14] = False
+#            ch.mask = mask
 
     for ptbin in range(npt):
         failCh = model['ptbin%dfail' % ptbin]

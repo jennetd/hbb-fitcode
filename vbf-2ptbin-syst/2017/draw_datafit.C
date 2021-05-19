@@ -8,17 +8,17 @@
 using namespace RooFit;
 using namespace RooStats;
 
-string year = "35.9/fb, 2016";
+string year = "41.5/fb, 2017";
 bool blind = true;
 
-void draw(bool pass, bool log=true){
+void draw(int index, bool pass, bool log=true){
 
   /* DATA */
   TH1D* data_obs;
   TFile* dataf = new TFile("signalregion.root");
-  data_obs = (TH1D*)dataf->Get("data_fail");
+  data_obs = (TH1D*)dataf->Get(("fail_pt"+to_string(index+1)+"_data_nominal").c_str());
   if( pass )
-    data_obs = (TH1D*)dataf->Get("data_pass");
+    data_obs = (TH1D*)dataf->Get(("pass_pt"+to_string(index+1)+"_data_nominal").c_str());
 
   // blind data!
   if( blind && pass ){                                                                                                   
@@ -26,15 +26,15 @@ void draw(bool pass, bool log=true){
       data_obs->SetBinContent(i,0);
     }                            
   }                                                                                               
-                                                                                                                 
+                                                                                                                             
   data_obs->SetLineColor(kBlack);
   data_obs->SetMarkerColor(kBlack);
   data_obs->SetMarkerStyle(20);
 
   string filename = "fitDiagnostics.root";
-  string name = "ptbin0fail";
+  string name = "ptbin"+to_string(index)+"fail";
   if( pass )
-    name = "ptbin0pass";
+    name = "ptbin"+to_string(index)+"pass";
   
   string histdirname = "shapes_fit_s/" + name;
 
@@ -202,9 +202,9 @@ void draw(bool pass, bool log=true){
   l3.SetNDC();
   l3.SetTextFont(42);
   l3.SetTextSize(textsize1);
-  string text ="DDB failing";
+  string text = "DDB failing, p_{T}^{H} bin "+to_string(index+1);
   if( pass )
-    text = "DDB passing";
+    text = "DDB passing, p_{T}^{H} bin "+to_string(index+1);
   l3.DrawLatex(0.15,.82,text.c_str());
 
   pad2->cd();
@@ -216,6 +216,7 @@ void draw(bool pass, bool log=true){
   TotalBkg_ratio->GetXaxis()->SetLabelSize(textsize2);
   TotalBkg_ratio->SetMarkerSize(0);
   TotalBkg_ratio->Draw("e2");
+
 
   TH1D* data_obs_ratio = (TH1D*)data_obs->Clone("data_obs_ratio");
   data_obs_ratio->Divide(TotalBkg);
@@ -237,11 +238,17 @@ void draw(bool pass, bool log=true){
 
 void draw_datafit(){
 
-  draw(0);
-  draw(1);
-
   draw(0,0);
+  draw(0,1);
+
   draw(1,0);
+  draw(1,1);
+
+  draw(0,0,0);
+  draw(0,1,0);
+
+  draw(1,0,0);
+  draw(1,1,0);
 
   return 0;
 
