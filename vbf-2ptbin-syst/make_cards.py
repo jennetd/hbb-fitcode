@@ -55,6 +55,7 @@ def get_template_muonCR(samp, passed, obs):
 def test_rhalphabet(tmpdir):
     throwPoisson = True #False
 
+    # experimental systematics
     lumi = rl.NuisanceParameter('CMS_lumi', 'lnN')
     jet_trigger = rl.NuisanceParameter('CMS_jet_trigger', 'lnN')
     jes = rl.NuisanceParameter('CMS_jes', 'lnN')
@@ -62,6 +63,14 @@ def test_rhalphabet(tmpdir):
     ues = rl.NuisanceParameter('CMS_ues', 'lnN')
     btagWeight = rl.NuisanceParameter('CMS_btagWeight', 'lnN')
     btagEffStat = rl.NuisanceParameter('CMS_btagEffStat', 'lnN')
+
+    # theory systematics
+    pdf_weight = rl.NuisanceParameter('PDF_weight', 'shape')
+    scale_ggF = rl.NuisanceParameter('scale_ggF', 'lnN')
+    scale_VBF = rl.NuisanceParameter('scale_VBF', 'lnN')
+    scale_VH = rl.NuisanceParameter('scale_VH', 'lnN')
+    scale_ttH = rl.NuisanceParameter('scale_ttH', 'lnN')
+    ps_weight = rl.NuisanceParameter('PS_weight', 'shape')
 
     tqqeffSF = rl.IndependentParameter('tqqeffSF', 1., 0, 20)
     tqqnormSF = rl.IndependentParameter('tqqnormSF', 1., 0, 20)
@@ -220,34 +229,59 @@ def test_rhalphabet(tmpdir):
                 templates[sName] = get_template(sName, isPass, ptbin+1, obs=msd, syst="nominal") 
                 nominal = templates[sName][0]
 
-                # some mock expectations
+                # expectations
                 templ = templates[sName]
                 stype = rl.Sample.SIGNAL if sName in sigs else rl.Sample.BACKGROUND
                 sample = rl.TemplateSample(ch.name + '_' + sName, stype, templ)
 
-                sample.setParamEffect(lumi, 1.027)
+                if sName != "QCD" and sName != "ttbar":
+                    sample.setParamEffect(lumi, 1.027)
 
-                jet_trigger_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="jet_triggerUp")[0], nominal)
-                jet_trigger_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="jet_triggerDown")[0], nominal)
-                sample.setParamEffect(jet_trigger, jet_trigger_up, jet_trigger_down)
+                    jet_trigger_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="jet_triggerUp")[0], nominal)
+                    jet_trigger_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="jet_triggerDown")[0], nominal)
+                    sample.setParamEffect(jet_trigger, jet_trigger_up, jet_trigger_down)
 
-                jes_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="JESUp")[0], nominal)
-                jes_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="JESDown")[0], nominal)
-                sample.setParamEffect(jes, jes_up, jes_down)
+                    jes_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="JESUp")[0], nominal)
+                    jes_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="JESDown")[0], nominal)
+                    sample.setParamEffect(jes, jes_up, jes_down)
 
-                jer_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="JERUp")[0], nominal)
-                jer_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="JERDown")[0], nominal)
-                sample.setParamEffect(jer, jer_up, jer_down)
+                    jer_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="JERUp")[0], nominal)
+                    jer_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="JERDown")[0], nominal)
+                    sample.setParamEffect(jer, jer_up, jer_down)
 
-                ues_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="UESUp")[0], nominal)
-                ues_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="UESDown")[0], nominal)
+                    ues_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="UESUp")[0], nominal)
+                    ues_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="UESDown")[0], nominal)
+                    sample.setParamEffect(ues, ues_up, ues_down)  
 
-                btagWeight_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="btagWeightUp")[0], nominal)
-                btagWeight_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="btagWeightDown")[0], nominal)
-                sample.setParamEffect(btagWeight, btagWeight_up, btagWeight_down)
+                    btagWeight_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="btagWeightUp")[0], nominal)
+                    btagWeight_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="btagWeightDown")[0], nominal)
+                    sample.setParamEffect(btagWeight, btagWeight_up, btagWeight_down)
 
-                btagEffStat_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="btagEffStatUp")[0], nominal)
-                btagEffStat_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="btagEffStatDown")[0], nominal)
+                    btagEffStat_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="btagEffStatUp")[0], nominal)
+                    btagEffStat_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="btagEffStatDown")[0], nominal)
+                    sample.setParamEffect(btagEffStat, btagEffStat_up, btagEffStat_down)
+
+                if sName != "QCD":
+                    pdf_weight_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="PDF_weightUp")[0], nominal)
+                    pdf_weight_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="PDF_weightDown")[0], nominal)
+                    sample.setParamEffect(pdf_weight, pdf_weight_up, pdf_weight_down)
+
+                if sName == "ggF":
+                    scale_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="scalevar_7ptUp")[0], nominal)
+                    scale_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="scalevar_7ptDown")[0], nominal)
+                    sample.setParamEffect(scale_ggF, scale_up, scale_down)
+                if sName == "VBF":
+                    scale_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="scalevar_3ptUp")[0], nominal)
+                    scale_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="scalevar_3ptDown")[0], nominal)
+                    sample.setParamEffect(scale_VBF, scale_up, scale_down)
+                if sName == "VH":
+                    scale_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="scalevar_3ptUp")[0], nominal)
+                    scale_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="scalevar_3ptDown")[0], nominal)
+                    sample.setParamEffect(scale_VH, scale_up, scale_down)
+                if sName == "ttH":
+                    scale_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="scalevar_7ptUp")[0], nominal)
+                    scale_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst="scalevar_7ptDown")[0], nominal)
+                    sample.setParamEffect(scale_ttH, scale_up, scale_down)
 
                 ch.addSample(sample)
 

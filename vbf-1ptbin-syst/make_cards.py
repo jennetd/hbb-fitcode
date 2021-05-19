@@ -230,7 +230,7 @@ def test_rhalphabet(tmpdir):
                 templates[sName] = get_template(sName, isPass, obs=msd, syst="nominal") 
                 nominal = templates[sName][0]
 
-                # some mock expectations
+                # expectations
                 templ = templates[sName]
                 stype = rl.Sample.SIGNAL if sName in sigs else rl.Sample.BACKGROUND
                 sample = rl.TemplateSample(ch.name + '_' + sName, stype, templ)
