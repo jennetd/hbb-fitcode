@@ -16,7 +16,7 @@ void draw_PFratio_QCDMC(){
   RooWorkspace* w = (RooWorkspace*)(f->Get("qcdfit_ws"));
   RooStats::ModelConfig* mc = (RooStats::ModelConfig*)(w->obj("ModelConfig"));
 
-  for(int i=0; i<6; i++){
+  for(int i=0; i<2; i++){
     RooDataSet* data_pass = (RooDataSet*)w->data(("ptbin"+to_string(i)+"pass_data_obs").c_str());
     RooDataSet* data_fail = (RooDataSet*)w->data(("ptbin"+to_string(i)+"fail_data_obs").c_str());
 
