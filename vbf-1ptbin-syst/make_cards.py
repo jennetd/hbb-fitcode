@@ -235,7 +235,7 @@ def test_rhalphabet(tmpdir):
                 stype = rl.Sample.SIGNAL if sName in sigs else rl.Sample.BACKGROUND
                 sample = rl.TemplateSample(ch.name + '_' + sName, stype, templ)
 
-                if sName != "QCD":
+                if sName != "QCD" and sName != "ttbar":
                     sample.setParamEffect(lumi, 1.027)
 
                     jet_trigger_up = syst_variation(get_template(sName, isPass, obs=msd, syst="jet_triggerUp")[0], nominal)
@@ -262,6 +262,7 @@ def test_rhalphabet(tmpdir):
                     btagEffStat_down = syst_variation(get_template(sName, isPass, obs=msd, syst="btagEffStatDown")[0], nominal)
                     sample.setParamEffect(btagEffStat, btagEffStat_up, btagEffStat_down)
                 
+                if sName != "QCD":
                     pdf_weight_up = syst_variation(get_template(sName, isPass, obs=msd, syst="PDF_weightUp")[0], nominal)
                     pdf_weight_down = syst_variation(get_template(sName, isPass, obs=msd, syst="PDF_weightDown")[0], nominal)
                     sample.setParamEffect(pdf_weight, pdf_weight_up, pdf_weight_down)
