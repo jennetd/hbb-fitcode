@@ -14,8 +14,8 @@ import json
 
 class AffineMorphTemplate(object):
     def __init__(self, hist):
-        '''                                                                                                                        
-        hist: a numpy-histogram-like tuple of (sumw, edges)                                                                          
+        '''                                                                                                    
+        hist: a numpy-histogram-like tuple of (sumw, edges)                                                     
         '''
         from scipy.interpolate import interp1d
 
@@ -33,8 +33,8 @@ class AffineMorphTemplate(object):
 
     def get(self, shift=0., scale=1.):
         '''                                                                                                             
-        Return a shifted and scaled histogram                                                                                      
-        i.e. new edges = edges * scale + shift                                                                                      
+        Return a shifted and scaled histogram                                                                     
+        i.e. new edges = edges * scale + shift                                                                        
         '''
         scaled_edges = (self.edges - shift) / scale
         return np.diff(self.cdf(scaled_edges)) * self.norm, self.edges
@@ -180,15 +180,16 @@ def test_rhalphabet(tmpdir,
         sys_shape_dict['UES'] = rl.NuisanceParameter('CMS_ues_j_{}'.format(year), 'lnN')
         sys_shape_dict['jet_trigger'] = rl.NuisanceParameter('CMS_gghcc_trigger_{}'.format(year), 'lnN')
         sys_shape_dict['pileup_weight'] = rl.NuisanceParameter('CMS_gghcc_PU_{}'.format(year), 'lnN')
-        for sys in ['btagEffStat', 'btagWeight', 'd1kappa_EW', 'Z_d2kappa_EW', 'Z_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']:
+        for sys in ['btagEffStat', 'btagWeight', 'd1kappa_EW', 'W_d2kappa_EW', 'W_d3kappa_EW', 'Z_d2kappa_EW', 'Z_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']:
             sys_shape_dict[sys] = rl.NuisanceParameter('CMS_gghcc_{}_{}'.format(sys, year), 'lnN')
+
     else:
         sys_shape_dict['JES'] = rl.NuisanceParameter('CMS_scale_j_{}'.format(year), 'shape')
         sys_shape_dict['JER'] = rl.NuisanceParameter('CMS_res_j_{}'.format(year), 'shape')
         sys_shape_dict['UES'] = rl.NuisanceParameter('CMS_ues_j_{}'.format(year), 'shape')
         sys_shape_dict['jet_trigger'] = rl.NuisanceParameter('CMS_gghcc_trigger_{}'.format(year), 'shape')
         sys_shape_dict['pileup_weight'] = rl.NuisanceParameter('CMS_gghcc_PU_{}'.format(year), 'shape')
-        for sys in ['btagEffStat', 'btagWeight', 'd1kappa_EW', 'Z_d2kappa_EW', 'Z_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']:
+        for sys in ['btagEffStat', 'btagWeight', 'd1kappa_EW', 'W_d2kappa_EW', 'W_d3kappa_EW', 'Z_d2kappa_EW', 'Z_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']:
             sys_shape_dict[sys] = rl.NuisanceParameter('CMS_gghcc_{}_{}'.format(sys, year), 'shape')
 
     sys_ddxeffbb = rl.NuisanceParameter('CMS_eff_bb_{}'.format(year), 'lnN')
@@ -200,7 +201,7 @@ def test_rhalphabet(tmpdir,
     sys_scale = rl.NuisanceParameter('CMS_gghcc_scale_{}'.format(year), 'shape')
     sys_smear = rl.NuisanceParameter('CMS_gghcc_smear_{}'.format(year), 'shape')
 
-    # theory systematics                                                                                                                  
+    # theory systematics                                                                                     
     pdf_weight = rl.NuisanceParameter('PDF_weight', 'shape')
     scale_ggF = rl.NuisanceParameter('scale_ggF', 'lnN')
     scale_VBF = rl.NuisanceParameter('scale_VBF', 'lnN')
@@ -209,7 +210,7 @@ def test_rhalphabet(tmpdir,
     ps_weight = rl.NuisanceParameter('PS_weight', 'shape')
 
     # define bins    
-    ptbins = np.array([450, 500, 550, 600, 675, 800, 1200])
+    ptbins = np.array([450, 550, 1200])
     npt = len(ptbins) - 1
     msdbins = np.linspace(47, 201, 23)
     msd = rl.Observable('msd', msdbins)
@@ -247,10 +248,10 @@ def test_rhalphabet(tmpdir,
     # initial values
     print('Initial fit values read from file initial_vals.csv')
     initial_vals = np.genfromtxt('initial_vals.csv')
-    initial_vals = initial_vals.reshape(3,3)
+    initial_vals = initial_vals.reshape(2, 3)
     print(initial_vals)
 
-    tf_MCtempl = rl.BernsteinPoly('tf_MCtempl', (2, 2), ['pt', 'rho'], init_params=initial_vals, limits=(-10, 10))
+    tf_MCtempl = rl.BernsteinPoly('tf_MCtempl', (1, 2), ['pt', 'rho'], init_params=initial_vals, limits=(-10, 10))
     tf_MCtempl_params = qcdeff * tf_MCtempl(ptscaled, rhoscaled)
     for ptbin in range(npt):
         failCh = qcdmodel['ptbin%dfail' % ptbin]
@@ -309,7 +310,7 @@ def test_rhalphabet(tmpdir,
 
     # exclude QCD from MC samps
     samps = ['ggF','VBF','WH','ZH','ttH','ttbar','singlet','Zjets','Wjets','VV']
-    sigs = ['ggF','VBF','WH','ZH','ttH']
+    sigs = ['VBF']
 
     for ptbin in range(npt):
         for region in ['pass', 'fail']:
@@ -339,7 +340,7 @@ def test_rhalphabet(tmpdir,
                 sample.setParamEffect(sys_eleveto, 1.005)
                 sample.setParamEffect(sys_muveto, 1.005)
 
-                for sys in ['jet_trigger','JES','JER','UES','pileup_weight','btagWeight','btagEffStat']:
+                for sys in ['jet_trigger','JES','JER','UES','pileup_weight']: #,'btagWeight','btagEffStat']:
                     sys_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst=sys+'Up')[0], nominal)
                     sys_do = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst=sys+'Down')[0], nominal)
                     sample.setParamEffect(sys_shape_dict[sys], sys_up, sys_do)
@@ -382,8 +383,8 @@ def test_rhalphabet(tmpdir,
                                           scale=realshift / 7.)
                     
                 if sName not in ['ttbar','singlet']:
-#                    # To Do
-#                    # Match to boson mass instead of mean
+                    # To Do
+                    # Match to boson mass instead of mean
                     smear_in, smear_unc = SF[year]['smear_SF'], SF[year]['smear_SF_ERR']
                     _smear_up = mtempl.get(scale=smear_in + 1 * smear_unc,
                                            shift=-mtempl.mean *
@@ -396,34 +397,40 @@ def test_rhalphabet(tmpdir,
                 # Theory systematics ####################################################################
 
                 # PDF uncertainty
-#                pdf_weight_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='PDF_weightUp')[0], nominal)
-#                pdf_weight_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='PDF_weightDown')[0], nominal)
-#                sample.setParamEffect(pdf_weight, pdf_weight_up, pdf_weight_down)
+                pdf_weight_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='PDF_weightUp')[0], nominal)
+                pdf_weight_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='PDF_weightDown')[0], nominal)
+                sample.setParamEffect(pdf_weight, pdf_weight_up, pdf_weight_down)
 
                 # uncertainties on V+jets
-#                if sName in ['Wjets','Zjets']:
-#                    for sys in ['d1kappa_EW', 'Z_d2kappa_EW', 'Z_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']:
-#                        sys_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst=sys+'Up')[0], nominal)
-#                        sys_do = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst=sys+'Down')[0], nominal)
-#                        sample.setParamEffect(sys_shape_dict[sys], sys_up, sys_do)
+                if sName =='Zjets':
+                    for sys in ['d1kappa_EW', 'Z_d2kappa_EW', 'Z_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']:
+                        sys_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst=sys+'Up')[0], nominal)
+                        sys_do = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst=sys+'Down')[0], nominal)
+                        sample.setParamEffect(sys_shape_dict[sys], sys_up, sys_do)
+
+                if sName == 'Wjets':
+                    for sys in ['d1kappa_EW', 'W_d2kappa_EW', 'W_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']:
+                        sys_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst=sys+'Up')[0], nominal)
+                        sys_do = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst=sys+'Down')[0], nominal)
+                        sample.setParamEffect(sys_shape_dict[sys], sys_up, sys_do)
                     
                 # uncertainties on Higgs signal
-#                if sName == 'ggF':
-#                    scale_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_7ptUp')[0], nominal)
-#                    scale_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_7ptDown')[0], nominal)
-#                    sample.setParamEffect(scale_ggF, scale_up, scale_down)
-#                if sName == 'VBF':
-#                    scale_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_3ptUp')[0], nominal)
-#                    scale_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_3ptDown')[0], nominal)
-#                    sample.setParamEffect(scale_VBF, scale_up, scale_down)
-#                if sName == 'VH':
-#                    scale_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_3ptUp')[0], nominal)
-#                    scale_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_3ptDown')[0], nominal)
-#                    sample.setParamEffect(scale_VH, scale_up, scale_down)
-#                if sName == 'ttH':
-#                    scale_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_7ptUp')[0], nominal)
-#                    scale_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_7ptDown')[0], nominal)
-#                    sample.setParamEffect(scale_ttH, scale_up, scale_down)
+                if sName == 'ggF':
+                    scale_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_7ptUp')[0], nominal)
+                    scale_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_7ptDown')[0], nominal)
+                    sample.setParamEffect(scale_ggF, scale_up, scale_down)
+                if sName == 'VBF':
+                    scale_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_3ptUp')[0], nominal)
+                    scale_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_3ptDown')[0], nominal)
+                    sample.setParamEffect(scale_VBF, scale_up, scale_down)
+                if sName == 'VH':
+                    scale_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_3ptUp')[0], nominal)
+                    scale_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_3ptDown')[0], nominal)
+                    sample.setParamEffect(scale_VH, scale_up, scale_down)
+                if sName == 'ttH':
+                    scale_up = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_7ptUp')[0], nominal)
+                    scale_down = syst_variation(get_template(sName, isPass, ptbin+1, obs=msd, syst='scalevar_7ptDown')[0], nominal)
+                    sample.setParamEffect(scale_ttH, scale_up, scale_down)
 
                 ch.addSample(sample)
 
