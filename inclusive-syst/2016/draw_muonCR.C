@@ -8,39 +8,29 @@
 using namespace RooFit;
 using namespace RooStats;
 
-string year = "41.5/fb, 2017";
+string year = "35.9/fb, 2016";
 bool blind = true;
 
-void draw(int index, bool pass, bool log=true){
+void draw(bool pass, string var, bool log=true){
+
+  string name = "muoncr_"+var+"fail";
+  if( pass )
+    name = "muoncr_"+var+"pass";
+
+  int rebin = 1;
+  //  if( var =a= "pt_" ) rebin = 10;
 
   /* DATA */
   TH1D* data_obs;
-  TFile* dataf = new TFile("signalregion.root");
-  data_obs = (TH1D*)dataf->Get(("fail_pt"+to_string(index+1)+"_data_nominal").c_str());
+  TFile* f = new TFile("muonCR.root");
+  data_obs = (TH1D*)f->Get(("muondata_"+var+"fail").c_str());
   if( pass )
-    data_obs = (TH1D*)dataf->Get(("pass_pt"+to_string(index+1)+"_data_nominal").c_str());
-
-  // blind data!
-  if( blind && pass ){                                                                                                   
-    for(int i=10; i<14; i++){
-      data_obs->SetBinContent(i,0);
-    }                            
-  }                                                                                                          
+    data_obs = (TH1D*)f->Get(("muondata_"+var+"pass").c_str());
 
   data_obs->SetLineColor(kBlack);
   data_obs->SetMarkerColor(kBlack);
   data_obs->SetMarkerStyle(20);
-
-  string filename = "fitDiagnostics.root";
-  string name = "ptbin"+to_string(index)+"fail";
-  if( pass )
-    name = "ptbin"+to_string(index)+"pass";
-  
-  string histdirname = "shapes_fit_s/" + name;
-
-  TFile *f = new TFile(filename.c_str());
-
-  //  RooArgSet* args = (RooArgSet*)f->Get("norm_fit_s");
+  data_obs->Rebin(rebin);
 
   gStyle->SetOptTitle(0);
   gStyle->SetOptStat(0);
@@ -64,69 +54,76 @@ void draw(int index, bool pass, bool log=true){
   pad1->cd();
   if( log ) pad1->SetLogy();
 
-  /* all Higgs */
-  TH1D* Higgs = (TH1D*)f->Get((histdirname+"/ggF").c_str());
-  Higgs->Add((TH1D*)f->Get((histdirname+"/VBF").c_str()));
-  Higgs->Add((TH1D*)f->Get((histdirname+"/WH").c_str()));
-  Higgs->Add((TH1D*)f->Get((histdirname+"/ZH").c_str()));
-  Higgs->Add((TH1D*)f->Get((histdirname+"/ttH").c_str()));
-  Higgs->Scale(7.0);
-  Higgs->SetLineColor(kGreen+1);
-  Higgs->SetMarkerColor(kGreen+1);
-  Higgs->SetLineWidth(3);
-
   THStack *bkg = new THStack("bkg","");
 
   /* VV */
-  TH1D* VV = (TH1D*)f->Get((histdirname+"/VV").c_str());
-  VV->Scale(7.0);
+  TH1D* VV;
+  VV = (TH1D*)f->Get(("VV_"+var+"fail").c_str());
+  if( pass )
+    VV = (TH1D*)f->Get(("VV_"+var+"pass").c_str());
   VV->SetLineColor(kBlack);
   VV->SetFillColor(kOrange-3);
+  VV->Rebin(rebin);
 
   /* single t */
-  TH1D* singlet = (TH1D*)f->Get((histdirname+"/singlet").c_str());
-  singlet->Scale(7.0);
+  TH1D* singlet;
+  singlet = (TH1D*)f->Get(("singlet_"+var+"fail").c_str());
+  if( pass )
+    singlet = (TH1D*)f->Get(("singlet_"+var+"pass").c_str());
   singlet->SetLineColor(kBlack);
   singlet->SetFillColor(kPink+6);
+  singlet->Rebin(rebin);
 
   /* ttbar */
-  TH1D* ttbar = (TH1D*)f->Get((histdirname+"/ttbar").c_str());
-  ttbar->Scale(7.0);
+  TH1D* ttbar;
+  ttbar = (TH1D*)f->Get(("ttbar_"+var+"fail").c_str());
+  if( pass )
+    ttbar = (TH1D*)f->Get(("ttbar_"+var+"pass").c_str());
   ttbar->SetLineColor(kBlack);
   ttbar->SetFillColor(kViolet-5);
+  ttbar->Rebin(rebin);
 
   /* Z + jets */
-  TH1D* Zjets = (TH1D*)f->Get((histdirname+"/Zjets").c_str());
-  Zjets->Scale(7.0);
+  TH1D* Zjets;
+  Zjets = (TH1D*)f->Get(("Zjets_"+var+"fail").c_str());
+  if( pass )
+    Zjets = (TH1D*)f->Get(("Zjets_"+var+"pass").c_str());
   Zjets->SetLineColor(kBlack);
   Zjets->SetFillColor(kAzure-1);
+  Zjets->Rebin(rebin);
 
   /* W + jets */
-  TH1D* Wjets = (TH1D*)f->Get((histdirname+"/Wjets").c_str());
-  Wjets->Scale(7.0);
+  TH1D* Wjets;
+  Wjets = (TH1D*)f->Get(("Wjets_"+var+"fail").c_str());
+  if( pass )
+    Wjets = (TH1D*)f->Get(("Wjets_"+var+"pass").c_str());
   Wjets->SetLineColor(kBlack);
   Wjets->SetFillColor(kAzure+8);
+  Wjets->Rebin(rebin);
 
   /* QCD */
-  TH1D* qcd = (TH1D*)f->Get((histdirname+"/qcd").c_str());
-  qcd->Scale(7.0);
+  TH1D* qcd;
+  qcd = (TH1D*)f->Get(("QCD_"+var+"fail").c_str());
+  if( pass )
+    qcd = (TH1D*)f->Get(("QCD_"+var+"pass").c_str());
   qcd->SetLineColor(kBlack);
   qcd->SetFillColor(kGray);
-  
+  qcd->Rebin(rebin);
+
   if( log ){
     bkg->Add(VV);
-    bkg->Add(singlet);
-    bkg->Add(ttbar);
     bkg->Add(Zjets);
     bkg->Add(Wjets);
+    bkg->Add(singlet);
     bkg->Add(qcd);
+    bkg->Add(ttbar);
   }
   else{
+    bkg->Add(ttbar);
     bkg->Add(qcd);
+    bkg->Add(singlet);
     bkg->Add(Wjets);
     bkg->Add(Zjets);
-    bkg->Add(ttbar);
-    bkg->Add(singlet);
     bkg->Add(VV);
   }
 
@@ -136,10 +133,14 @@ void draw(int index, bool pass, bool log=true){
   cout << "ttbar: "   << ttbar->Integral()   << endl;
   cout << "singlet: " << singlet->Integral() << endl;
   cout << "VV: "      << VV->Integral()      << endl;
-
+  
   /* total background */
-  TH1D* TotalBkg = (TH1D*)f->Get((histdirname+"/total_background").c_str());
-  TotalBkg->Scale(7.0);
+  TH1D* TotalBkg = (TH1D*)qcd->Clone("TotalBkg");
+  TotalBkg->Add(Wjets);
+  TotalBkg->Add(Zjets);
+  TotalBkg->Add(ttbar);
+  TotalBkg->Add(singlet);
+  TotalBkg->Add(VV);
   TotalBkg->SetMarkerColor(kRed);
   TotalBkg->SetLineColor(kRed);
   TotalBkg->SetFillColor(kRed);
@@ -151,11 +152,15 @@ void draw(int index, bool pass, bool log=true){
   TotalBkg->GetYaxis()->SetLabelSize(textsize1);
   TotalBkg->GetYaxis()->SetTitle("Events / 7 GeV");
   TotalBkg->GetXaxis()->SetTitle("m_{sd} [GeV]");
+  if( var == "pt_" ){
+    TotalBkg->GetXaxis()->SetTitle("Muon p_T [GeV]");
+    TotalBkg->GetXaxis()->SetRangeUser(0,500);
+  }
+  if( var == "eta_" ) TotalBkg->GetXaxis()->SetTitle("Muon |#eta| [GeV]");
 
   TotalBkg->Draw("e2");
   bkg->Draw("histsame");
   TotalBkg->Draw("e2same");
-  Higgs->Draw("histsame");
   data_obs->Draw("pesame");
   data_obs->Draw("axissame");
   
@@ -173,7 +178,6 @@ void draw(int index, bool pass, bool log=true){
   leg->AddEntry(ttbar,"t#bar{t}","f");
   leg->AddEntry(singlet,"Single t","f");
   leg->AddEntry(VV,"VV","f");
-  leg->AddEntry(Higgs,"Higgs","l");
 
   leg->Draw();
 
@@ -193,9 +197,9 @@ void draw(int index, bool pass, bool log=true){
   l3.SetNDC();
   l3.SetTextFont(42);
   l3.SetTextSize(textsize1);
-  string text = "DDB failing, p_{T}^{H} bin "+to_string(index+1);
+  string text ="DDB failing";
   if( pass )
-    text = "DDB passing, p_{T}^{H} bin "+to_string(index+1);
+    text = "DDB passing";
   l3.DrawLatex(0.15,.82,text.c_str());
 
   pad2->cd();
@@ -208,12 +212,10 @@ void draw(int index, bool pass, bool log=true){
   TotalBkg_ratio->SetMarkerSize(0);
   TotalBkg_ratio->Draw("e2");
 
-
   TH1D* data_obs_ratio = (TH1D*)data_obs->Clone("data_obs_ratio");
   data_obs_ratio->Divide(TotalBkg);
 
-  double max2 = data_obs_ratio->GetMaximum();
-  TotalBkg_ratio->GetYaxis()->SetRangeUser(0.6,1.3*max2);
+  TotalBkg_ratio->GetYaxis()->SetRangeUser(0,2);
   
   TotalBkg_ratio->Draw("e2");
   data_obs_ratio->Draw("pesame");
@@ -227,15 +229,25 @@ void draw(int index, bool pass, bool log=true){
 
 }
 
-void draw_datafit(){
+void draw_muonCR(){
 
-  for(int i=0; i<6; i++){
-    draw(i,0,0);
-    draw(i,1,0);
+  draw(0,"");
+  draw(1,"");
 
-    draw(i,0,1);
-    draw(i,1,1);
-  }
+  draw(0,"",0);
+  draw(1,"",0);
+
+  draw(0,"pt_");
+  draw(1,"pt_");
+
+  draw(0,"pt_",0);
+  draw(1,"pt_",0);
+
+  draw(0,"eta_");
+  draw(1,"eta_");
+
+  draw(0,"eta_",0);
+  draw(1,"eta_",0);
 
   return 0;
 

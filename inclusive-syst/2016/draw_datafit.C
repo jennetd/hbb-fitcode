@@ -8,25 +8,25 @@
 using namespace RooFit;
 using namespace RooStats;
 
-string year = "41.5/fb, 2017";
+string year = "35.9/fb, 2016";
 bool blind = true;
 
-void draw(int index, bool pass, bool log=true){
+void draw(int index, bool pass){
 
   /* DATA */
   TH1D* data_obs;
   TFile* dataf = new TFile("signalregion.root");
-  data_obs = (TH1D*)dataf->Get(("fail_pt"+to_string(index+1)+"_data_nominal").c_str());
+  data_obs = (TH1D*)dataf->Get(("data_fail_pt"+to_string(index+1)).c_str());
   if( pass )
-    data_obs = (TH1D*)dataf->Get(("pass_pt"+to_string(index+1)+"_data_nominal").c_str());
+    data_obs = (TH1D*)dataf->Get(("data_pass_pt"+to_string(index+1)).c_str());
 
   // blind data!
   if( blind && pass ){                                                                                                   
     for(int i=10; i<14; i++){
       data_obs->SetBinContent(i,0);
     }                            
-  }                                                                                                          
-
+  }                                                                                               
+                                                                                                                             
   data_obs->SetLineColor(kBlack);
   data_obs->SetMarkerColor(kBlack);
   data_obs->SetMarkerStyle(20);
@@ -62,7 +62,7 @@ void draw(int index, bool pass, bool log=true){
   float textsize2 = 16/(pad2->GetWh()*pad2->GetAbsHNDC());
 
   pad1->cd();
-  if( log ) pad1->SetLogy();
+  pad1->SetLogy();
 
   /* all Higgs */
   TH1D* Higgs = (TH1D*)f->Get((histdirname+"/ggF").c_str());
@@ -82,54 +82,43 @@ void draw(int index, bool pass, bool log=true){
   VV->Scale(7.0);
   VV->SetLineColor(kBlack);
   VV->SetFillColor(kOrange-3);
+  bkg->Add(VV);
 
   /* single t */
   TH1D* singlet = (TH1D*)f->Get((histdirname+"/singlet").c_str());
   singlet->Scale(7.0);
   singlet->SetLineColor(kBlack);
   singlet->SetFillColor(kPink+6);
+  bkg->Add(singlet);
 
   /* ttbar */
   TH1D* ttbar = (TH1D*)f->Get((histdirname+"/ttbar").c_str());
   ttbar->Scale(7.0);
   ttbar->SetLineColor(kBlack);
   ttbar->SetFillColor(kViolet-5);
+  bkg->Add(ttbar);
 
   /* Z + jets */
   TH1D* Zjets = (TH1D*)f->Get((histdirname+"/Zjets").c_str());
   Zjets->Scale(7.0);
   Zjets->SetLineColor(kBlack);
   Zjets->SetFillColor(kAzure-1);
+  bkg->Add(Zjets);
 
   /* W + jets */
   TH1D* Wjets = (TH1D*)f->Get((histdirname+"/Wjets").c_str());
   Wjets->Scale(7.0);
   Wjets->SetLineColor(kBlack);
   Wjets->SetFillColor(kAzure+8);
+  bkg->Add(Wjets);
 
   /* QCD */
   TH1D* qcd = (TH1D*)f->Get((histdirname+"/qcd").c_str());
   qcd->Scale(7.0);
   qcd->SetLineColor(kBlack);
   qcd->SetFillColor(kGray);
+  bkg->Add(qcd);
   
-  if( log ){
-    bkg->Add(VV);
-    bkg->Add(singlet);
-    bkg->Add(ttbar);
-    bkg->Add(Zjets);
-    bkg->Add(Wjets);
-    bkg->Add(qcd);
-  }
-  else{
-    bkg->Add(qcd);
-    bkg->Add(Wjets);
-    bkg->Add(Zjets);
-    bkg->Add(ttbar);
-    bkg->Add(singlet);
-    bkg->Add(VV);
-  }
-
   cout << "QCD: "     << qcd->Integral()     << endl;
   cout << "Wjets: "   << Wjets->Integral()   << endl;
   cout << "Zjets: "   << Zjets->Integral()   << endl;
@@ -146,7 +135,6 @@ void draw(int index, bool pass, bool log=true){
   TotalBkg->SetFillStyle(3001);
   double max = TotalBkg->GetMaximum();
   TotalBkg->GetYaxis()->SetRangeUser(0.1,1000*max);
-  if( !log ) TotalBkg->GetYaxis()->SetRangeUser(0,1.3*max);
   TotalBkg->GetYaxis()->SetTitleSize(textsize1);
   TotalBkg->GetYaxis()->SetLabelSize(textsize1);
   TotalBkg->GetYaxis()->SetTitle("Events / 7 GeV");
@@ -218,8 +206,6 @@ void draw(int index, bool pass, bool log=true){
   TotalBkg_ratio->Draw("e2");
   data_obs_ratio->Draw("pesame");
 
-  if( !log ) name += "_lin";
-
   c->SaveAs((name+".png").c_str());
   c->SaveAs((name+".pdf").c_str());
 
@@ -230,11 +216,8 @@ void draw(int index, bool pass, bool log=true){
 void draw_datafit(){
 
   for(int i=0; i<6; i++){
-    draw(i,0,0);
-    draw(i,1,0);
-
-    draw(i,0,1);
-    draw(i,1,1);
+    draw(i,0);
+    draw(i,1);
   }
 
   return 0;

@@ -65,7 +65,10 @@ void draw(int index, bool pass){
   pad1->SetLogy();
 
   /* all Higgs */
-  TH1D* Higgs = (TH1D*)f->Get((histdirname+"/ggF").c_str());
+  TH1D* Higgs = (TH1D*)data_obs->Clone("Higgs");
+  Higgs->Reset();
+  
+  Higgs->Add((TH1D*)f->Get((histdirname+"/ggF").c_str()));
   Higgs->Add((TH1D*)f->Get((histdirname+"/VBF").c_str()));
   Higgs->Add((TH1D*)f->Get((histdirname+"/WH").c_str()));
   Higgs->Add((TH1D*)f->Get((histdirname+"/ZH").c_str()));
