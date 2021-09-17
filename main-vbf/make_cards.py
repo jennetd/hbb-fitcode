@@ -441,7 +441,7 @@ def ggfvbf_rhalphabet(tmpdir,
                         sample.setParamEffect(sys_muveto, 1.005)
                         sample.setParamEffect(sys_tauveto, 1.005)
 
-                        for sys in ['JES','JER','UES','jet_trigger','pileup_weight','btagWeight','btagEffStat']:
+                        for sys in ['JES','JER','UES','jet_trigger','pileup_weight','btagWeight']:
                             syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up')[0]
                             syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down')[0]
                             effect = shape_to_num(nominal,syst_up,syst_do)
@@ -587,7 +587,7 @@ def ggfvbf_rhalphabet(tmpdir,
             if sName == 'QCD':
                 continue
 
-            for sys in ['mu_trigger','mu_isoweight','mu_idweight','JES','JER','UES','pileup_weight','btagWeight','btagEffStat']:
+            for sys in ['mu_trigger','mu_isoweight','mu_idweight','JES','JER','UES','pileup_weight','btagWeight']:
                 syst_up = get_template(sName, isPass, -1, '', obs=msd, syst=sys+'Up', muon=True)[0]
                 syst_do = get_template(sName, isPass, -1, '', obs=msd, syst=sys+'Down', muon=True)[0]
                 effect = shape_to_num(nominal,syst_up,syst_do)
