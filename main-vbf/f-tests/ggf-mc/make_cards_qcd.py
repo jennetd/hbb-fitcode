@@ -110,16 +110,20 @@ def ggfvbf_rhalphabet(tmpdir,
                     binindex = mjjbin
                 print("Bin: " + cat + " bin " + str(binindex))
 
-                failCh = rl.Channel('ptbin%dmjjbin%d%sfail%s' % (ptbin, mjjbin, cat, year))                    
                 passCh = rl.Channel('ptbin%dmjjbin%d%spass%s' % (ptbin, mjjbin, cat, year))  
+
+
+                # QCD templates from file                                                                                                                         
+                failTempl = get_template('QCD', 0, binindex+1, cat+'_', obs=msd, syst='nominal')
+                initial_qcd = failTempl[0]
 
                 qcdparams = np.array([rl.IndependentParameter('qcdparam_'+cat+'_ptbin%d_msdbin%d' % (ptbin, i), 0) for i in range(msd.nbins)])
 
-                fail_qcd = rl.ParametericSample('ptbin%dmjjbin%d%sfail%s_qcd' % (ptbin, mjjbin, cat, year), rl.Sample.BACKGROUND, msd, qcdparams)
+                sigmascale = 10  # to scale the deviation from initial                                                      
+                scaledparams = initial_qcd * (1 + sigmascale/np.maximum(1., np.sqrt(initial_qcd)))**qcdparams
+                fail_qcd = rl.ParametericSample('ptbin%dmjjbin%d%sfail%s_qcd' % (ptbin, mjjbin, cat, year), rl.Sample.BACKGROUND, msd, scaledparams)
 
                 pass_qcd = rl.TransferFactorSample('ptbin%dmjjbin%d%spass%s_qcd' % (ptbin, mjjbin, cat, year), rl.Sample.BACKGROUND, tf_params[cat][ptbin, :], fail_qcd)
-
-                # Bkg prediction = failing QCD * TF
                 passCh.addSample(pass_qcd)
 
                 # Take random Higgs sample as signal. To be fixed to 0 in GoodnessOfFit
