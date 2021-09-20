@@ -76,10 +76,9 @@ def ggfvbf_rhalphabet(tmpdir,
         thecat = 'vbf'
 
     # Build model
-    tf_params = {}
     for cat in [thecat]:
 
-        qcdeff = 0.001
+        fitfailed_qcd = 0
 
         # here we derive these all at once with 2D array                            
         ptpts, msdpts = np.meshgrid(ptbins[cat][:-1] + 0.3 * np.diff(ptbins[cat]), msdbins[:-1] + 0.5 * np.diff(msdbins), indexing='ij')
@@ -89,49 +88,134 @@ def ggfvbf_rhalphabet(tmpdir,
         validbins[cat] = (rhoscaled >= 0) & (rhoscaled <= 1)
         rhoscaled[~validbins[cat]] = 1  # we will mask these out later   
 
-        # build actual fit model 
+        while fitfailed_qcd < 5:
+
+            qcdmodel = rl.Model("qcdmodel")
+            qcdpass, qcdfail = 0., 0.
+            for ptbin in range(npt[cat]):
+                for mjjbin in range(nmjj[cat]):
+                    
+                    failCh = rl.Channel('ptbin%dmjjbin%d%sfail%s' % (ptbin, mjjbin, cat, year))
+                    passCh = rl.Channel('ptbin%dmjjbin%d%spass%s' % (ptbin, mjjbin, cat, year))
+                    
+                    qcdmodel.addChannel(failCh)
+                    qcdmodel.addChannel(passCh)
+                    
+                    binindex = ptbin
+                    if cat == 'vbf':
+                        binindex = mjjbin
+                    print("Bin: " + cat + " bin " + str(binindex))
+
+                    failTempl = get_template('QCD', 0, binindex+1, cat+'_', obs=msd, syst='nominal')
+                    passTempl = get_template('QCD', 1, binindex+1, cat+'_', obs=msd, syst='nominal')
+
+                    failCh.setObservation(failTempl, read_sumw2=True)
+                    passCh.setObservation(passTempl, read_sumw2=True)
+
+                    qcdfail += sum([val for val in failTempl[0]])
+                    qcdpass += sum([val for val in passTempl[0]])
+
+            qcdeff = qcdpass / qcdfail
+            print('Inclusive P/F from Monte Carlo = ' + str(qcdeff))
+
+            # initial values                                                                 
+            print('Initial fit values read from file initial_vals*')
+            with open('initial_vals_'+cat+'.json') as f:
+                initial_vals = np.array(json.load(f)['initial_vals'])
+            print(initial_vals)
+
+            tf_MCtempl = rl.BernsteinPoly('tf_MCtempl_'+cat, (initial_vals.shape[0]-1,initial_vals.shape[1]-1), ['pt', 'rho'], init_params=initial_vals, limits=(-20, 20))
+            tf_MCtempl_params = qcdeff * tf_MCtempl(ptscaled, rhoscaled)
+
+            for ptbin in range(npt[cat]):
+                for mjjbin in range(nmjj[cat]):
+
+                    failCh = qcdmodel['ptbin%dmjjbin%d%sfail%s' % (ptbin, mjjbin, cat, year)]
+                    passCh = qcdmodel['ptbin%dmjjbin%d%spass%s' % (ptbin, mjjbin, cat, year)]
+                    failObs = failCh.getObservation()
+                    passObs = passCh.getObservation()
+                    
+                    qcdparams = np.array([rl.IndependentParameter('qcdparam_'+cat+'_ptbin%d_msdbin%d' % (ptbin, i), 0) for i in range(msd.nbins)])
+                    sigmascale = 10.
+                    scaledparams = failObs * (1 + sigmascale/np.maximum(1., np.sqrt(failObs)))**qcdparams
+                    
+                    fail_qcd = rl.ParametericSample('ptbin%dmjjbin%d%sfail%s_qcd' % (ptbin, mjjbin, cat, year), rl.Sample.BACKGROUND, msd, scaledparams[0])
+                    failCh.addSample(fail_qcd)
+                    pass_qcd = rl.TransferFactorSample('ptbin%dmjjbin%d%spass%s_qcd' % (ptbin, mjjbin, cat, year), rl.Sample.BACKGROUND, tf_MCtempl_params[ptbin, :], fail_qcd)
+                    passCh.addSample(pass_qcd)
+                
+                    failCh.mask = validbins[cat][ptbin]
+                    passCh.mask = validbins[cat][ptbin]
+
+            qcdfit_ws = ROOT.RooWorkspace('qcdfit_ws')
+
+            simpdf, obs = qcdmodel.renderRoofit(qcdfit_ws)
+            qcdfit = simpdf.fitTo(obs,
+                                  ROOT.RooFit.Extended(True),
+                                  ROOT.RooFit.SumW2Error(True),
+                                  ROOT.RooFit.Strategy(2),
+                                  ROOT.RooFit.Save(),
+                                  ROOT.RooFit.Minimizer('Minuit2', 'migrad'),
+                                  ROOT.RooFit.PrintLevel(1),
+                              )
+            qcdfit_ws.add(qcdfit)
+            qcdfit_ws.writeToFile(os.path.join(str(tmpdir), 'testModel_qcdfit_'+cat+'_'+year+'.root'))
+            
+            # Set parameters to fitted values                                                                                                                         
+            allparams = dict(zip(qcdfit.nameArray(), qcdfit.valueArray()))
+            pvalues = []
+            for i, p in enumerate(tf_MCtempl.parameters.reshape(-1)):
+                pvalues += [allparams[p.name]]
+                
+            if qcdfit.status() != 0:
+                print('Could not fit qcd')
+                fitfailed_qcd += 1
+
+                new_values = np.array(pvalues).reshape(tf_MCtempl.parameters.shape)
+                with open("initial_vals_"+cat+".json", "w") as outfile:
+                    json.dump({"initial_vals":new_values.tolist()},outfile)
+
+            else:
+                break
+
+            if fitfailed_qcd >=5:
+                raise RuntimeError('Could not fit qcd after 5 tries')
+
+        print("Fitted qcd for category " + cat)
+
+        tf_MCtempl_params_final = tf_MCtempl(ptscaled, rhoscaled)
+        tf_params = qcdeff * tf_MCtempl_params_final
+
         model = rl.Model('testModel_'+year)
-
-        # Initial TF coeffient values
-        print('Initial fit values read from file initial_vals*')
-        with open('initial_vals_'+cat+'.json') as f:
-            initial_vals = np.array(json.load(f)['initial_vals'])
-        print(initial_vals)
-
-        tf_MCtempl = rl.BernsteinPoly('tf_MCtempl_'+cat, (initial_vals.shape[0]-1,initial_vals.shape[1]-1), ['pt', 'rho'], limits=(-10, 10))
-        tf_MCtempl_params = qcdeff * tf_MCtempl(ptscaled, rhoscaled)
-        tf_params[cat] = qcdeff * tf_MCtempl_params
-
         for ptbin in range(npt[cat]):
             for mjjbin in range(nmjj[cat]):
-                
+
                 binindex = ptbin
                 if cat == 'vbf':
                     binindex = mjjbin
                 print("Bin: " + cat + " bin " + str(binindex))
 
-                passCh = rl.Channel('ptbin%dmjjbin%d%spass%s' % (ptbin, mjjbin, cat, year))  
+                passCh = rl.Channel('ptbin%dmjjbin%d%spass%s' % (ptbin, mjjbin, cat, year))
 
-
-                # QCD templates from file                                                                                                                         
                 failTempl = get_template('QCD', 0, binindex+1, cat+'_', obs=msd, syst='nominal')
-                initial_qcd = failTempl[0]
+                passTempl = get_template('QCD', 1, binindex+1, cat+'_', obs=msd, syst='nominal')
 
-                qcdparams = np.array([rl.IndependentParameter('qcdparam_'+cat+'_ptbin%d_msdbin%d' % (ptbin, i), 0) for i in range(msd.nbins)])
+                qcdparams = np.array([rl.IndependentParameter('qcdparam_ptbin%d_msdbin%d' % (ptbin, i), 0, lo=-100, hi=100) for i in range(msd.nbins)])
+                sigmascale = 10.
+                scaledparams = failTempl[0] * (1 + sigmascale/np.maximum(1., np.sqrt(failTempl[0])))**qcdparams
 
-                sigmascale = 10  # to scale the deviation from initial                                                      
-                scaledparams = initial_qcd * (1 + sigmascale/np.maximum(1., np.sqrt(initial_qcd)))**qcdparams
+                # "Predicted background" = fail MC * TF
                 fail_qcd = rl.ParametericSample('ptbin%dmjjbin%d%sfail%s_qcd' % (ptbin, mjjbin, cat, year), rl.Sample.BACKGROUND, msd, scaledparams)
-
-                pass_qcd = rl.TransferFactorSample('ptbin%dmjjbin%d%spass%s_qcd' % (ptbin, mjjbin, cat, year), rl.Sample.BACKGROUND, tf_params[cat][ptbin, :], fail_qcd)
+                pass_qcd = rl.TransferFactorSample('ptbin%dmjjbin%d%spass%s_qcd' % (ptbin, mjjbin, cat, year), rl.Sample.BACKGROUND, tf_params[ptbin, :], fail_qcd)
                 passCh.addSample(pass_qcd)
 
-                # Take random Higgs sample as signal. To be fixed to 0 in GoodnessOfFit
+                # Take random Higgs sample as signal. To be fixed to 0 in GoodnessOfFit                                                                                   
                 fake_signal = rl.TemplateSample(passCh.name+'_ggF', rl.Sample.SIGNAL, get_template('ggF', 1, binindex+1, cat+'_', obs=msd, syst='nominal'))
                 passCh.addSample(fake_signal)
 
-                # passing QCD MC = fake data
-                passCh.setObservation(get_template('QCD', 1, binindex+1, cat+'_', obs=msd, syst='nominal'), read_sumw2=True)
+                passCh.setObservation(passTempl,read_sumw2=True) 
+
+                passCh.mask = validbins[cat][ptbin]
 
                 model.addChannel(passCh)
 
