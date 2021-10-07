@@ -242,7 +242,7 @@ def ggfvbf_rhalphabet(tmpdir,
     with open('sf.json') as f:
         SF = json.load(f)
 
-    vbf_ttbar_unc = dict({"2016":1.0,"2017":1.09,"2018":1.0})
+    vbf_ttbar_unc = dict({"2016":1.29,"2017":1.34,"2018":1.52})
 
     # TT params
     tqqeffSF = rl.IndependentParameter('tqqeffSF_{}'.format(year), 1., 0, 10)
@@ -524,10 +524,6 @@ def ggfvbf_rhalphabet(tmpdir,
                             syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down')[0]
                             effect = shape_to_num(nominal,syst_up,syst_do)
                             
-                            # Avoid this one, which is pathological
-#                            if year == '2016' and sys == 'jet_trigger':
-#                                effect = shape_to_num(nominal,syst_up,syst_up)
-
                             if abs(effect-1) > eps:
                                 sample.setParamEffect(sys_dict[sys], effect)
                                 df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,effect-1]],columns=cols))

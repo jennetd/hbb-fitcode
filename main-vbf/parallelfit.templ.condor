@@ -1,0 +1,15 @@
+#!/usr/bin/env condor_submit
+
+executable              = logs/TAG.sh
+request_cpus            = 30
+arguments               = YEAR
+should_transfer_files   = YES
+transfer_input_files    = output
+when_to_transfer_output = ON_EXIT_OR_EVICT
+
+output                  = logs/TAG.out
+error                   = logs/TAG.err
+log                     = logs/TAG.log
+
+Queue 1 
+
