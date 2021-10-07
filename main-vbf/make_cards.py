@@ -75,6 +75,35 @@ def smass(sName):
         raise ValueError("What is {}".format(sName))
     return _mass
 
+def get_template_year(y, sName, passed, ptbin, cat, obs, syst, muon=False):
+    """                                                                                                                                   
+    Read msd template from root file for year y                                                                    
+    """
+
+    f = ROOT.TFile.Open(y+'-signalregion.root')
+    if muon:
+        f = ROOT.TFile.Open(y+'-muonCR.root')
+
+    name = cat+'fail_'
+    if passed:
+        name = cat+'pass_'
+    if cat == 'ggf_':
+        name += 'pt'+str(ptbin)+'_'
+    if cat == 'vbf_':
+        name += 'mjj'+str(ptbin)+'_'
+
+    name += sName+'_'+syst
+
+    h = f.Get(name)
+    sumw = []
+    sumw2 = []
+
+    for i in range(1,h.GetNbinsX()+1):
+        sumw += [h.GetBinContent(i)]
+        sumw2 += [h.GetBinError(i)*h.GetBinError(i)]
+
+    return (np.array(sumw), obs.binning, obs.name, np.array(sumw2))
+
 def get_template(sName, passed, ptbin, cat, obs, syst, muon=False):
     """
     Read msd template from root file
@@ -213,6 +242,8 @@ def ggfvbf_rhalphabet(tmpdir,
     with open('sf.json') as f:
         SF = json.load(f)
 
+    vbf_ttbar_unc = dict({"2016":1.0,"2017":1.09,"2018":1.0})
+
     # TT params
     tqqeffSF = rl.IndependentParameter('tqqeffSF_{}'.format(year), 1., 0, 10)
     tqqnormSF = rl.IndependentParameter('tqqnormSF_{}'.format(year), 1., 0, 10)
@@ -239,25 +270,42 @@ def ggfvbf_rhalphabet(tmpdir,
     sys_dict['btagWeight'] = rl.NuisanceParameter('CMS_hbb_btagWeight_{}'.format(year), 'lnN')
     sys_dict['btagEffStat'] = rl.NuisanceParameter('CMS_hbb_btagEffStat_{}'.format(year),'lnN')
 
+    sys_prefire = rl.NuisanceParameter('CMS_L1Prefiring_{}'.format(year),'lnN')
+
     sys_ddxeffbb = rl.NuisanceParameter('CMS_eff_bb_{}'.format(year), 'lnN')
     sys_veff = rl.NuisanceParameter('CMS_hbb_veff_{}'.format(year), 'lnN')
 
     sys_scale = rl.NuisanceParameter('CMS_hbb_scale_{}'.format(year), 'shape')
     sys_smear = rl.NuisanceParameter('CMS_hbb_smear_{}'.format(year), 'shape')
 
+    sys_vbf_ttbar_unc = rl.NuisanceParameter('CMS_hbb_vbfmucr_{}'.format(year), 'lnN')
+
     # theory systematics are correlated across years
-    for sys in ['btagEffStat', 'btagWeight', 'd1kappa_EW', 'Z_d2kappa_EW', 'Z_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']:
+    for sys in ['btagEffStat', 'btagWeight', 'd1kappa_EW', 'Z_d2kappa_EW', 'Z_d3kappa_EW', 'W_d2kappa_EW', 'W_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']:
         sys_dict[sys] = rl.NuisanceParameter('CMS_hbb_{}'.format(sys), 'lnN')
-                                           
+            
+    Zjets_thsysts = ['d1kappa_EW', 'Z_d2kappa_EW', 'Z_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']
+    Wjets_thsysts = ['d1kappa_EW', 'W_d2kappa_EW', 'W_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']         
+                      
     pdf_Higgs_ggF = rl.NuisanceParameter('pdf_Higgs_ggF','lnN')
     pdf_Higgs_VBF = rl.NuisanceParameter('pdf_Higgs_VBF','lnN')
     pdf_Higgs_VH  = rl.NuisanceParameter('pdf_Higgs_VH','lnN')
     pdf_Higgs_ttH = rl.NuisanceParameter('pdf_Higgs_ttH','lnN')
 
-    scale_ggF = rl.NuisanceParameter('QCDscale_ggH', 'lnN')
-    scale_VBF = rl.NuisanceParameter('QCDscale_qqH', 'lnN')
+    scale_ggF = rl.NuisanceParameter('QCDscale_ggF', 'lnN')
+    scale_VBF = rl.NuisanceParameter('QCDscale_VBF', 'lnN')
     scale_VH = rl.NuisanceParameter('QCDscale_VH', 'lnN')
     scale_ttH = rl.NuisanceParameter('QCDscale_ttH', 'lnN')
+
+    isr_ggF = rl.NuisanceParameter('UEPS_ISR_ggF', 'lnN')
+    isr_VBF = rl.NuisanceParameter('UEPS_ISR_VBF', 'lnN')
+    isr_VH = rl.NuisanceParameter('UEPS_ISR_VH', 'lnN')
+    isr_ttH = rl.NuisanceParameter('UEPS_ISR_ttH', 'lnN')
+
+    fsr_ggF = rl.NuisanceParameter('UEPS_FSR_ggF', 'lnN')
+    fsr_VBF = rl.NuisanceParameter('UEPS_FSR_VBF', 'lnN')
+    fsr_VH = rl.NuisanceParameter('UEPS_FSR_VH', 'lnN')
+    fsr_ttH = rl.NuisanceParameter('UEPS_FSR_ttH', 'lnN')
 
     ps_weight = rl.NuisanceParameter('UEPS', 'shape')
 
@@ -290,6 +338,8 @@ def ggfvbf_rhalphabet(tmpdir,
     tf_params = {}
     for cat in cats:
 
+        fitfailed_qcd = 0
+
         # here we derive these all at once with 2D array                            
         ptpts, msdpts = np.meshgrid(ptbins[cat][:-1] + 0.3 * np.diff(ptbins[cat]), msdbins[:-1] + 0.5 * np.diff(msdbins), indexing='ij')
         rhopts = 2*np.log(msdpts/ptpts)
@@ -298,84 +348,101 @@ def ggfvbf_rhalphabet(tmpdir,
         validbins[cat] = (rhoscaled >= 0) & (rhoscaled <= 1)
         rhoscaled[~validbins[cat]] = 1  # we will mask these out later   
 
-        qcdmodel = rl.Model('qcdmodel_'+cat)
-        qcdpass, qcdfail = 0., 0.
+        while fitfailed_qcd < 5:
         
-        for ptbin in range(npt[cat]):
-            for mjjbin in range(nmjj[cat]):
-                failCh = rl.Channel('ptbin%dmjjbin%d%s%s' % (ptbin, mjjbin, cat, 'fail'))
-                passCh = rl.Channel('ptbin%dmjjbin%d%s%s' % (ptbin, mjjbin, cat, 'pass'))
-                qcdmodel.addChannel(failCh)
-                qcdmodel.addChannel(passCh)
+            qcdmodel = rl.Model('qcdmodel_'+cat)
+            qcdpass, qcdfail = 0., 0.
 
-                # QCD templates from file                           
-                if cat == "vbf":
-                    failTempl = get_template('QCD', 0, mjjbin+1, cat+'_', obs=msd, syst='nominal')
-                    passTempl = get_template('QCD', 1, mjjbin+1, cat+'_', obs=msd, syst='nominal')
-                else: 
-                    failTempl = get_template('QCD', 0, ptbin+1, cat+'_', obs=msd, syst='nominal')
-                    passTempl = get_template('QCD', 1, ptbin+1, cat+'_', obs=msd, syst='nominal')
+            for ptbin in range(npt[cat]):
+                for mjjbin in range(nmjj[cat]):
 
-                failCh.setObservation(failTempl, read_sumw2=True)
-                passCh.setObservation(passTempl, read_sumw2=True)
+                    failCh = rl.Channel('ptbin%dmjjbin%d%s%s%s' % (ptbin, mjjbin, cat, 'fail',year))
+                    passCh = rl.Channel('ptbin%dmjjbin%d%s%s%s' % (ptbin, mjjbin, cat, 'pass',year))
+                    qcdmodel.addChannel(failCh)
+                    qcdmodel.addChannel(passCh)
 
-                qcdfail += sum([val for val in failCh.getObservation()[0]])
-                qcdpass += sum([val for val in passCh.getObservation()[0]])
+                    # QCD templates from file                           
+                    if cat == "vbf":
+                        failTempl = get_template('QCD', 0, mjjbin+1, cat+'_', obs=msd, syst='nominal')
+                        passTempl = get_template('QCD', 1, mjjbin+1, cat+'_', obs=msd, syst='nominal')
+                    else: 
+                        failTempl = get_template('QCD', 0, ptbin+1, cat+'_', obs=msd, syst='nominal')
+                        passTempl = get_template('QCD', 1, ptbin+1, cat+'_', obs=msd, syst='nominal')
 
-        qcdeff = qcdpass / qcdfail
-        print('Inclusive P/F from Monte Carlo = ' + str(qcdeff))
+                    failCh.setObservation(failTempl, read_sumw2=True)
+                    passCh.setObservation(passTempl, read_sumw2=True)
 
-        # initial values                                                                 
-        print('Initial fit values read from file initial_vals*')
-        with open('initial_vals_'+cat+'.json') as f:
-            initial_vals = np.array(json.load(f)['initial_vals'])
-        print(initial_vals)
+                    qcdfail += sum([val for val in failCh.getObservation()[0]])
+                    qcdpass += sum([val for val in passCh.getObservation()[0]])
 
-        tf_MCtempl = rl.BernsteinPoly('tf_MCtempl_'+cat, (initial_vals.shape[0]-1,initial_vals.shape[1]-1), ['pt', 'rho'], init_params=initial_vals, limits=(-20, 20))
-        tf_MCtempl_params = qcdeff * tf_MCtempl(ptscaled, rhoscaled)
+            qcdeff = qcdpass / qcdfail
+            print('Inclusive P/F from Monte Carlo = ' + str(qcdeff))
 
-        for ptbin in range(npt[cat]):
-            for mjjbin in range(nmjj[cat]):
+            # initial values                                                                 
+            print('Initial fit values read from file initial_vals*')
+            with open('initial_vals_'+cat+'.json') as f:
+                initial_vals = np.array(json.load(f)['initial_vals'])
+            print(initial_vals)
 
-                failCh = qcdmodel['ptbin%dmjjbin%d%sfail' % (ptbin, mjjbin, cat)]
-                passCh = qcdmodel['ptbin%dmjjbin%d%spass' % (ptbin, mjjbin, cat)]
-                failObs = failCh.getObservation()
-                passObs = passCh.getObservation()
+            tf_MCtempl = rl.BernsteinPoly('tf_MCtempl_'+cat, (initial_vals.shape[0]-1,initial_vals.shape[1]-1), ['pt', 'rho'], init_params=initial_vals, limits=(-5, 5))
+            tf_MCtempl_params = qcdeff * tf_MCtempl(ptscaled, rhoscaled)
+
+            for ptbin in range(npt[cat]):
+                for mjjbin in range(nmjj[cat]):
+
+                    failCh = qcdmodel['ptbin%dmjjbin%d%sfail%s' % (ptbin, mjjbin, cat, year)]
+                    passCh = qcdmodel['ptbin%dmjjbin%d%spass%s' % (ptbin, mjjbin, cat, year)]
+                    failObs = failCh.getObservation()
+                    passObs = passCh.getObservation()
                 
-                qcdparams = np.array([rl.IndependentParameter('qcdparam_'+cat+'_ptbin%d_msdbin%d' % (ptbin, i), 0) for i in range(msd.nbins)])
-                sigmascale = 10.
-                scaledparams = failObs * (1 + sigmascale/np.maximum(1., np.sqrt(failObs)))**qcdparams
+                    qcdparams = np.array([rl.IndependentParameter('qcdparam_'+cat+'_ptbin%d_msdbin%d' % (ptbin, i), 0) for i in range(msd.nbins)])
+                    sigmascale = 10.
+                    scaledparams = failObs * (1 + sigmascale/np.maximum(1., np.sqrt(failObs)))**qcdparams
                 
-                fail_qcd = rl.ParametericSample('ptbin%dmjjbin%d%sfail_qcd' % (ptbin, mjjbin, cat), rl.Sample.BACKGROUND, msd, scaledparams[0])
-                failCh.addSample(fail_qcd)
-                pass_qcd = rl.TransferFactorSample('ptbin%dmjjbin%d%spass_qcd' % (ptbin, mjjbin, cat), rl.Sample.BACKGROUND, tf_MCtempl_params[ptbin, :], fail_qcd)
-                passCh.addSample(pass_qcd)
+                    fail_qcd = rl.ParametericSample('ptbin%dmjjbin%d%sfail%s_qcd' % (ptbin, mjjbin, cat, year), rl.Sample.BACKGROUND, msd, scaledparams[0])
+                    failCh.addSample(fail_qcd)
+                    pass_qcd = rl.TransferFactorSample('ptbin%dmjjbin%d%spass%s_qcd' % (ptbin, mjjbin, cat, year), rl.Sample.BACKGROUND, tf_MCtempl_params[ptbin, :], fail_qcd)
+                    passCh.addSample(pass_qcd)
                 
-                failCh.mask = validbins[cat][ptbin]
-                passCh.mask = validbins[cat][ptbin]
+                    failCh.mask = validbins[cat][ptbin]
+                    passCh.mask = validbins[cat][ptbin]
 
-        qcdfit_ws = ROOT.RooWorkspace('qcdfit_ws')
+            qcdfit_ws = ROOT.RooWorkspace('w')
 
-        simpdf, obs = qcdmodel.renderRoofit(qcdfit_ws)
-        qcdfit = simpdf.fitTo(obs,
-                              ROOT.RooFit.Extended(True),
-                              ROOT.RooFit.SumW2Error(True),
-                              ROOT.RooFit.Strategy(2),
-                              ROOT.RooFit.Save(),
-                              ROOT.RooFit.Minimizer('Minuit2', 'migrad'),
-                              ROOT.RooFit.PrintLevel(1),
-                          )
-        qcdfit_ws.add(qcdfit)
-        qcdfit_ws.writeToFile(os.path.join(str(tmpdir), 'testModel_qcdfit_'+cat+'.root'))
+            simpdf, obs = qcdmodel.renderRoofit(qcdfit_ws)
+            qcdfit = simpdf.fitTo(obs,
+                                  ROOT.RooFit.Extended(True),
+                                  ROOT.RooFit.SumW2Error(True),
+                                  ROOT.RooFit.Strategy(2),
+                                  ROOT.RooFit.Save(),
+                                  ROOT.RooFit.Minimizer('Minuit2', 'migrad'),
+                                  ROOT.RooFit.PrintLevel(1),
+                              )
+            qcdfit_ws.add(qcdfit)
+            qcdfit_ws.writeToFile(os.path.join(str(tmpdir), 'testModel_qcdfit_'+cat+'_'+year+'.root'))
 
-        # Set parameters to fitted values  
-        allparams = dict(zip(qcdfit.nameArray(), qcdfit.valueArray()))
-        for i, p in enumerate(tf_MCtempl.parameters.reshape(-1)):
-            p.value = allparams[p.name]
-            print(p.value)
+            # Set parameters to fitted values  
+            allparams = dict(zip(qcdfit.nameArray(), qcdfit.valueArray()))
+            pvalues = []
+            for i, p in enumerate(tf_MCtempl.parameters.reshape(-1)):
+                p.value = allparams[p.name]
+                pvalues += [p.value]
             
-        if qcdfit.status() != 0:
-            raise RuntimeError('Could not fit qcd')
+            if qcdfit.status() != 0:
+                print('Could not fit qcd')
+                fitfailed_qcd += 1
+
+                new_values = np.array(pvalues).reshape(tf_MCtempl.parameters.shape)
+                with open("initial_vals_"+cat+".json", "w") as outfile:
+                    json.dump({"initial_vals":new_values.tolist()},outfile)
+
+            else:
+                break
+
+        if fitfailed_qcd >=5:
+            raise RuntimeError('Could not fit qcd after 5 tries')
+
+        print("Fitted qcd for category " + cat)
 
         # Plot the MC P/F transfer factor                                                   
         plot_mctf(tf_MCtempl,msdbins, cat)                           
@@ -385,16 +452,19 @@ def ggfvbf_rhalphabet(tmpdir,
         tf_MCtempl.parameters = decoVector.correlated_params.reshape(tf_MCtempl.parameters.shape)
         tf_MCtempl_params_final = tf_MCtempl(ptscaled, rhoscaled)
 
-        tf_dataResidual = rl.BernsteinPoly('tf_dataResidual_'+cat, (initial_vals.shape[0]-1,initial_vals.shape[1]-1), ['pt', 'rho'], limits=(-20, 20))
+        tf_dataResidual = rl.BernsteinPoly('tf_dataResidual_'+cat, (initial_vals.shape[0]-1,initial_vals.shape[1]-1), ['pt', 'rho'], limits=(-10, 10))
         tf_dataResidual_params = tf_dataResidual(ptscaled, rhoscaled)
         tf_params[cat] = qcdeff * tf_MCtempl_params_final * tf_dataResidual_params
 
     # build actual fit model now
-    model = rl.Model('testModel')
+    model = rl.Model('testModel_'+year)
 
     # exclude QCD from MC samps
     samps = ['ggF','VBF','WH','ZH','ttH','ttbar','singlet','Zjets','Zjetsbb','Wjets','VV']
     sigs = ['ggF','VBF']
+
+    cols = ['bin','region','samp','syst','val']
+    df = pd.DataFrame(columns=cols)
 
     for cat in cats:
         for ptbin in range(npt[cat]):
@@ -410,7 +480,7 @@ def ggfvbf_rhalphabet(tmpdir,
                     # drop bins outside rho validity                                                
                     mask = validbins[cat][ptbin]
 
-                    ch = rl.Channel('ptbin%dmjjbin%d%s%s' % (ptbin, mjjbin, cat, region))
+                    ch = rl.Channel('ptbin%dmjjbin%d%s%s%s' % (ptbin, mjjbin, cat, region, year))
                     model.addChannel(ch)
 
                     isPass = region == 'pass'
@@ -434,29 +504,46 @@ def ggfvbf_rhalphabet(tmpdir,
                             stype = rl.Sample.BACKGROUND
                     
                         sample = rl.TemplateSample(ch.name + '_' + sName, stype, templ)
-                
+                        sample.autoMCStats()
+
                         # Experimental systematics #######################################
                         sample.setParamEffect(sys_lumi, 1.027)
                         sample.setParamEffect(sys_eleveto, 1.005)
                         sample.setParamEffect(sys_muveto, 1.005)
                         sample.setParamEffect(sys_tauveto, 1.005)
 
+                        if year == "2016" or year == "2017":
+                            syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='L1PrefiringUp')[0]
+                            syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='L1PrefiringDown')[0]
+                            effect = shape_to_num(nominal,syst_up,syst_do)
+                            sample.setParamEffect(sys_prefire, effect)
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'L1Prefiring',effect-1]],columns=cols))
+
                         for sys in ['JES','JER','UES','jet_trigger','pileup_weight','btagWeight']:
                             syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up')[0]
                             syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down')[0]
                             effect = shape_to_num(nominal,syst_up,syst_do)
+                            
+                            # Avoid this one, which is pathological
+#                            if year == '2016' and sys == 'jet_trigger':
+#                                effect = shape_to_num(nominal,syst_up,syst_up)
+
                             if abs(effect-1) > eps:
                                 sample.setParamEffect(sys_dict[sys], effect)
+                                df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,effect-1]],columns=cols))
 
                         # DDB SF                                                                      
                         if sName in ['ggF','VBF','WH','ZH','ggZH','ttH','Zjetsbb']:
                             sf,sfunc = passfailSF(isPass, sName, binindex, cat+'_', msd, mask, 1, 0.3)
                             sample.scale(sf)
                             sample.setParamEffect(sys_ddxeffbb, sfunc)
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'DDB',sfunc-1]],columns=cols))
 
                         # N2DDT SF (V SF)                          
                         sample.scale(SF[year]['V_SF'])
-                        sample.setParamEffect(sys_veff, 1.0 + SF[year]['V_SF_ERR'] / SF[year]['V_SF'])
+                        effect = 1.0 + SF[year]['V_SF_ERR'] / SF[year]['V_SF']
+                        sample.setParamEffect(sys_veff, effect)
+                        df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'N2DDT',effect-1]],columns=cols))
 
                         # Jet mass shift/smear                         
                         mtempl = AffineMorphTemplate(templ)
@@ -480,43 +567,85 @@ def ggfvbf_rhalphabet(tmpdir,
                                 sample.setParamEffect(sys_smear, _up, _down)
 
                         # Theory systematics ############################################
-                        # uncertainties on V+jets                                                
-                        if sName in ['Zjets','Zjetsbb','Wjets']:
-                            for sys in ['d1K_NLO', 'd2K_NLO', 'd3K_NLO', 'd1kappa_EW']:
-                                syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up')[0]
-                                syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down')[0]
-                                effect = shape_to_num(nominal,syst_up,syst_do)
-                                if abs(effect-1) > eps:
-                                    sample.setParamEffect(sys_dict[sys], effect)
+                        # uncertainties on V+jets                 
 
-                        if sName in ['Zjets','Zjetsbb']:
-                            for sys in ['Z_d2kappa_EW', 'Z_d3kappa_EW']:
+                        if sName in ['Wjets']:
+                            for sys in Wjets_thsysts:
                                 syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up')[0]
                                 syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down')[0]
-                                effect = shape_to_num(nominal,syst_up,syst_do)
-                                if abs(effect-1) > eps:
-                                    sample.setParamEffect(sys_dict[sys], effect)
+                                sample.setParamEffect(sys_dict[sys], syst_variation(syst_up,nominal), syst_variation(syst_do,nominal))
+                               
+                        if sName in ['Zjets','Zjetsbb']:
+                            for sys in Zjets_thsysts:
+                                syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up')[0]
+                                syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down')[0]
+                                sample.setParamEffect(sys_dict[sys], syst_variation(syst_up,nominal), syst_variation(syst_do,nominal))
+
+                        if sName == "ttbar" and cat == "vbf":
+                            print(vbf_ttbar_unc[year])
+                            sample.setParamEffect(sys_vbf_ttbar_unc,vbf_ttbar_unc[year])
 
                         # QCD scale and PDF uncertainties on Higgs signal    
                         if sName in ['ggF','VBF','WH','ZH','ggZH','ttH']:
-                            scale_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptUp')[0]
-                            scale_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptDown')[0]
+                            
+                            nominal18 = get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='nominal')[0]
+  
+                            fsr18_up = get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRUp')[0]
+                            fsr18_do = get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRDown')[0]
+                            effect_fsr = shape_to_num(nominal18,fsr18_up,fsr18_do)
+
+                            isr18_up = get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_ISRUp')[0]
+                            isr18_do = get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_ISRDown')[0]
+                            effect_isr = shape_to_num(nominal18,isr18_up,isr18_do)
 
                             pdf_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='PDF_weightUp')[0]
                             pdf_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='PDF_weightDown')[0]
-
+                            effect_pdf = shape_to_num(nominal,pdf_up,pdf_do)
+                            
                             if sName == 'ggF':
-                                sample.setParamEffect(scale_ggF,shape_to_num(nominal,scale_up,scale_do))
-                                sample.setParamEffect(pdf_Higgs_ggF,shape_to_num(nominal,pdf_up,pdf_do))
+                                scale_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptUp')[0]
+                                scale_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptDown')[0]
+                                effect_scale = shape_to_num(nominal,scale_up,scale_do)
+
+                                sample.setParamEffect(scale_ggF,effect_scale)
+                                sample.setParamEffect(pdf_Higgs_ggF,effect_pdf)
+                                sample.setParamEffect(fsr_ggF,effect_fsr)
+                                sample.setParamEffect(isr_ggF,effect_isr)
+
                             elif sName == 'VBF':
-                                sample.setParamEffect(scale_VBF,shape_to_num(nominal,scale_up,scale_do))
-                                sample.setParamEffect(pdf_Higgs_VBF,shape_to_num(nominal,pdf_up,pdf_do))
+                                scale_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptUp')[0]
+                                scale_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptDown')[0]
+                                effect_scale = shape_to_num(nominal,scale_up,scale_do)
+
+                                sample.setParamEffect(scale_VBF,effect_scale)
+                                sample.setParamEffect(pdf_Higgs_VBF,effect_pdf)
+                                sample.setParamEffect(fsr_VBF,effect_fsr)
+                                sample.setParamEffect(isr_VBF,effect_isr)
+
                             elif sName in ['WH','ZH','ggZH']:
-                                sample.setParamEffect(scale_VH,shape_to_num(nominal,scale_up,scale_do))
-                                sample.setParamEffect(pdf_Higgs_VH,shape_to_num(nominal,pdf_up,pdf_do))
+                                scale_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptUp')[0]
+                                scale_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptDown')[0]
+                                effect_scale = shape_to_num(nominal,scale_up,scale_do)
+
+                                sample.setParamEffect(scale_VH,effect_scale)
+                                sample.setParamEffect(pdf_Higgs_VH,effect_pdf)
+                                sample.setParamEffect(fsr_VH,effect_fsr)
+                                sample.setParamEffect(isr_VH,effect_isr)
+
                             elif sName == 'ttH':
-                                sample.setParamEffect(scale_ttH,shape_to_num(nominal,scale_up,scale_do))
-                                sample.setParamEffect(pdf_Higgs_ttH,shape_to_num(nominal,pdf_up,pdf_do))
+                                scale_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptUp')[0]
+                                scale_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptDown')[0]
+                                effect_scale = shape_to_num(nominal,scale_up,scale_do)
+
+                                sample.setParamEffect(scale_ttH,effect_scale)
+                                sample.setParamEffect(pdf_Higgs_ttH,effect_pdf)
+                                sample.setParamEffect(fsr_ttH,effect_fsr)
+                                sample.setParamEffect(isr_ttH,effect_isr)
+ 
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'scale',effect_scale-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'PDF',effect_pdf-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'FSR',effect_fsr-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'ISR',effect_isr-1]],columns=cols))
 
                         ch.addSample(sample)
 
@@ -531,8 +660,8 @@ def ggfvbf_rhalphabet(tmpdir,
         for ptbin in range(npt[cat]):
             for mjjbin in range(nmjj[cat]):
 
-                failCh = model['ptbin%dmjjbin%d%sfail' % (ptbin, mjjbin, cat)]
-                passCh = model['ptbin%dmjjbin%d%spass' % (ptbin, mjjbin, cat)]
+                failCh = model['ptbin%dmjjbin%d%sfail%s' % (ptbin, mjjbin, cat, year)]
+                passCh = model['ptbin%dmjjbin%d%spass%s' % (ptbin, mjjbin, cat, year)]
 
                 qcdparams = np.array([rl.IndependentParameter('qcdparam_'+cat+'_ptbin%d_msdbin%d' % (ptbin, i), 0) for i in range(msd.nbins)])
                 initial_qcd = failCh.getObservation()[0].astype(float)  # was integer, and numpy complained about subtracting float from it
@@ -545,9 +674,9 @@ def ggfvbf_rhalphabet(tmpdir,
 
                 sigmascale = 10  # to scale the deviation from initial                      
                 scaledparams = initial_qcd * (1 + sigmascale/np.maximum(1., np.sqrt(initial_qcd)))**qcdparams
-                fail_qcd = rl.ParametericSample('ptbin%dmjjbin%d%sfail_qcd' % (ptbin, mjjbin, cat), rl.Sample.BACKGROUND, msd, scaledparams)
+                fail_qcd = rl.ParametericSample('ptbin%dmjjbin%d%sfail%s_qcd' % (ptbin, mjjbin, cat, year), rl.Sample.BACKGROUND, msd, scaledparams)
                 failCh.addSample(fail_qcd)
-                pass_qcd = rl.TransferFactorSample('ptbin%dmjjbin%d%spass_qcd' % (ptbin, mjjbin, cat), rl.Sample.BACKGROUND, tf_params[cat][ptbin, :], fail_qcd)
+                pass_qcd = rl.TransferFactorSample('ptbin%dmjjbin%d%spass%s_qcd' % (ptbin, mjjbin, cat, year), rl.Sample.BACKGROUND, tf_params[cat][ptbin, :], fail_qcd)
                 passCh.addSample(pass_qcd)
 
                 tqqpass = passCh['ttbar']
@@ -562,7 +691,7 @@ def ggfvbf_rhalphabet(tmpdir,
     templates = {}
     samps = ['ttbar','QCD','singlet','Zjets','Wjets','VV']
     for region in ['pass', 'fail']:
-        ch = rl.Channel('muonCR%s' % (region, ))
+        ch = rl.Channel('muonCR%s%s' % (region, year))
         model.addChannel(ch)
 
         isPass = region == 'pass'
@@ -578,6 +707,7 @@ def ggfvbf_rhalphabet(tmpdir,
 
             stype = rl.Sample.BACKGROUND
             sample = rl.TemplateSample(ch.name + '_' + sName, stype, templates[sName])
+            sample.autoMCStats()
 
             sample.setParamEffect(sys_lumi, 1.027)
             sample.setParamEffect(sys_eleveto, 1.005)
@@ -593,34 +723,47 @@ def ggfvbf_rhalphabet(tmpdir,
                 effect = shape_to_num(nominal,syst_up,syst_do)
                 if abs(effect-1) > eps:
                     sample.setParamEffect(sys_dict[sys], effect)
+                    df = df.append(pd.DataFrame([["mucr",region,sName,sys,effect-1]],columns=cols))
                     
+            if year == "2016" or year == "2017":
+                syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='L1PrefiringUp')[0]
+                syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='L1PrefiringDown')[0]
+                effect = shape_to_num(nominal,syst_up,syst_do)
+                sample.setParamEffect(sys_prefire, effect)
+                df = df.append(pd.DataFrame([["mucr",region,sName,'L1Prefiring',effect-1]],columns=cols))
+
             # DDB SF                                                                                  
-            if sName in ['ggF','VBF','WH','ZH','ttH','Zjetsbb']:
+            if sName in ['ggF','VBF','WH','ZH','ggZH','ttH','Zjetsbb']:
                 sf,sfunc = passfailSF(isPass, sName, -1, '', msd, mask, 1, 0.3, muon=True)
                 sample.scale(sf)
                 sample.setParamEffect(sys_ddxeffbb, sfunc)
+                df = df.append(pd.DataFrame([["mucr",region,sName,'DDB',sfunc-1]],columns=cols))
 
             # N2DDT SF (V SF)                                                            
             sample.scale(SF[year]['V_SF'])
-            sample.setParamEffect(sys_veff, 1.0 + SF[year]['V_SF_ERR'] / SF[year]['V_SF'])
+            effect = 1.0 + SF[year]['V_SF_ERR'] / SF[year]['V_SF']
+            sample.setParamEffect(sys_veff, effect)
+            df = df.append(pd.DataFrame([["mucr",region,sName,'N2DDT',effect-1]],columns=cols))
 
             ch.addSample(sample)
 
         data_obs = get_template('muondata', isPass, -1, '', obs=msd, syst='nominal', muon=True)
         ch.setObservation(data_obs, read_sumw2=True)
 
-    tqqpass = model['muonCRpass_ttbar']
-    tqqfail = model['muonCRfail_ttbar']
+    tqqpass = model['muonCRpass'+year+'_ttbar']
+    tqqfail = model['muonCRfail'+year+'_ttbar']
     tqqPF = tqqpass.getExpectation(nominal=True).sum() / tqqfail.getExpectation(nominal=True).sum()
     tqqpass.setParamEffect(tqqeffSF, 1*tqqeffSF)
     tqqfail.setParamEffect(tqqeffSF, (1 - tqqeffSF) * tqqPF + 1)
     tqqpass.setParamEffect(tqqnormSF, 1*tqqnormSF)
     tqqfail.setParamEffect(tqqnormSF, 1*tqqnormSF)
 
-    with open(os.path.join(str(tmpdir), 'testModel.pkl'), 'wb') as fout:
+    df.to_csv('systematics.csv')
+
+    with open(os.path.join(str(tmpdir), 'testModel_'+year+'.pkl'), 'wb') as fout:
         pickle.dump(model, fout)
 
-    model.renderCombine(os.path.join(str(tmpdir), 'testModel'))
+    model.renderCombine(os.path.join(str(tmpdir), 'testModel_'+year))
 
 if __name__ == '__main__':
 

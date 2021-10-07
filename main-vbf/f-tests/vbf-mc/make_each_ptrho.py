@@ -11,8 +11,8 @@ if __name__ == '__main__':
     elif "2018" in thisdir:
         year = "2018"
 
-    for pt in range(0,2):
-        for rho in range(0,1):
+    for pt in range(0,1):
+        for rho in range(1,3):
 
             print("pt = "+str(pt)+", rho = "+str(rho))
 
@@ -27,13 +27,13 @@ if __name__ == '__main__':
             os.system("ln -s ../../make_cards_qcd.py .")
 
             # Create your json files of initial values
-            if not os.path.isfile("initial_vals_ggf.json"):
+            if not os.path.isfile("initial_vals_vbf.json"):
 
                 initial_vals = (np.full((pt+1,rho+1),1)).tolist()
                 thedict = {}
                 thedict["initial_vals"] = initial_vals
 
-                with open("initial_vals_ggf.json", "w") as outfile:
+                with open("initial_vals_vbf.json", "w") as outfile:
                     json.dump(thedict,outfile)
 
             # Create the workspace

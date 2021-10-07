@@ -35,7 +35,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     pt = int(args.pt[0])
-    rho = int(args.rho[0])
+    rho = 0
     ntoys = int(args.ntoys[0])
     
     p1 = pt+rho
@@ -45,11 +45,7 @@ if __name__ == '__main__':
     alternatives = []
     pvalues = []
 
-    if pt == rho:
-#        alternatives += ["pt"+str(pt+1)+"rho"+str(rho)]
-        alternatives += ["pt"+str(pt)+"rho"+str(rho+1)]
-    else:
-        alternatives += ["pt"+str(max(pt,rho))+"rho"+str(max(pt,rho))]
+    alternatives += ["pt"+str(pt+1)+"rho0"]
 
     for i,alt in enumerate(alternatives):
 
