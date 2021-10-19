@@ -16,13 +16,13 @@ git clone https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit.git HiggsA
 cd HiggsAnalysis/CombinedLimit
 git fetch origin
 git checkout v8.2.0
-scramv1 b clean; scramv1 b
+#scramv1 b clean; scramv1 b
 cd ../..
 
 # IMPORTANT: Checkout the recommended tag on the link above                                                                
 git clone https://github.com/cms-analysis/CombineHarvester.git CombineHarvester
 scramv1 b clean; scramv1 b
-cd ../..
+#cd ../..
 
 # Arguments
 year=$1
