@@ -1,1 +1,0 @@
-../../plot_impacts.sh
