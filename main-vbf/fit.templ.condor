@@ -5,7 +5,7 @@ arguments               = YEAR
 should_transfer_files   = YES
 transfer_input_files    = output
 when_to_transfer_output = ON_EXIT_OR_EVICT
-
+request_memory          = 4000
 output                  = logs/TAG.out
 error                   = logs/TAG.err
 log                     = logs/TAG.log

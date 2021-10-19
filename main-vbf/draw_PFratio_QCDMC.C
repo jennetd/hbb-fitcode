@@ -10,6 +10,19 @@ using namespace RooStats;
 
 void draw_PFratio_QCDMC(){
 
+  // Get the year from the running directory                                     
+  string thisdir = gSystem->pwd();
+
+  string year = "2016";
+
+  if(thisdir.find("2017") != std::string::npos){
+    year = "2017";
+  }
+  if(thisdir.find("2018") != std::string::npos){
+    year = "2018";
+  }
+
+
   vector<string> procs = {"vbf","ggf"};
   vector<int> nptbins = {1,6};
   vector<int> nmjjbins = {2,1};
@@ -18,12 +31,12 @@ void draw_PFratio_QCDMC(){
     for(int i=0; i<nptbins.at(j); i++){
       for(int k=0; k<nmjjbins.at(j); k++){
 	
-	TFile* f = new TFile(("output/testModel_qcdfit_"+procs.at(j)+".root").c_str());
-	RooWorkspace* w = (RooWorkspace*)(f->Get("qcdfit_ws"));
+	TFile* f = new TFile(("output/testModel_qcdfit_"+procs.at(j)+"_"+year+".root").c_str());
+	RooWorkspace* w = (RooWorkspace*)(f->Get("w"));
 	RooStats::ModelConfig* mc = (RooStats::ModelConfig*)(w->obj("ModelConfig"));
 	
-	RooDataSet* data_pass = (RooDataSet*)w->data(("ptbin"+to_string(i)+"mjjbin"+to_string(k)+procs.at(j)+"pass_data_obs").c_str());
-	RooDataSet* data_fail = (RooDataSet*)w->data(("ptbin"+to_string(i)+"mjjbin"+to_string(k)+procs.at(j)+"fail_data_obs").c_str());
+	RooDataSet* data_pass = (RooDataSet*)w->data(("ptbin"+to_string(i)+"mjjbin"+to_string(k)+procs.at(j)+"pass"+year+"_data_obs").c_str());
+	RooDataSet* data_fail = (RooDataSet*)w->data(("ptbin"+to_string(i)+"mjjbin"+to_string(k)+procs.at(j)+"fail"+year+"_data_obs").c_str());
 	
 	TCanvas *c1 = new TCanvas(("c_"+procs.at(j)+"_"+to_string(i)+to_string(k)).c_str(), 
 				  ("c_"+procs.at(j)+"_"+to_string(i)+to_string(k)).c_str(), 600, 600);
@@ -32,7 +45,7 @@ void draw_PFratio_QCDMC(){
 	string bin = "ptbin"+to_string(i)+"mjjbin"+to_string(k)+procs.at(j);
 	cout << bin << endl;
 
-	(*w->pdf((bin+"pass_qcd").c_str())).plotOn(frame1, LineColor(kRed));
+	(*w->pdf((bin+"pass"+year+"_qcd").c_str())).plotOn(frame1, LineColor(kRed));
 
 	data_pass->plotOn(frame1, Rescale(1.0/data_pass->sumEntries()), DataError(RooAbsData::SumW2), MarkerColor(kBlack));
 	data_fail->plotOn(frame1, Rescale(1.0/data_fail->sumEntries()), LineColor(kBlue), MarkerColor(kBlue));

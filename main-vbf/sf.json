@@ -1,0 +1,4 @@
+{
+"2016": {"shift_SF": -1.000, "shift_SF_ERR": 0.088, "smear_SF": 1.02345, "smear_SF_ERR": 0.01765, "V_SF": 0.876, "V_SF_ERR": 0.017, "BB_SF": 0.99, "BB_SF_ERR": 0.12},
+"2017": {"shift_SF": -1.000, "shift_SF_ERR": 0.055, "smear_SF": 1.0148, "smear_SF_ERR": 0.0130, "V_SF": 0.967, "V_SF_ERR": 0.009, "BB_SF": 0.99, "BB_SF_ERR": 0.14}, 
+"2018": {"shift_SF": -0.304, "shift_SF_ERR": 0.15, "smear_SF": 1.05, "smear_SF_ERR": 0.00235, "V_SF": 0.896, "V_SF_ERR": 0.013, "BB_SF": 1.24, "BB_SF_ERR": 0.20}}

@@ -42,6 +42,32 @@ TGraph* get_contour(string dir, string cl){
 
 void draw_contour(){
 
+  // Get the year and prefit/postfit/obs from the running directory                                               
+  string thisdir = gSystem->pwd();
+
+  string year = "all";
+  string year_string = "137/fb, Run 2";
+  double rZbb = 1;
+
+  if(thisdir.find("2016") != std::string::npos){
+    year = "2016";
+    year_string = "35.9/fb, 2016";
+  }
+  if(thisdir.find("2017") != std::string::npos){
+    year = "2017";
+    year_string = "41.5/fb, 2017";
+  }
+  if(thisdir.find("2018") != std::string::npos){
+    year = "2018";
+    year_string = "59.2/fb, 2018";
+  }
+
+  string asimov = "Observed";
+  if(thisdir.find("postfit") != std::string::npos)
+    asimov = "Exp. postfit";
+  if(thisdir.find("prefit") !=std::string::npos)
+    asimov = "Exp. prefit";
+
   gStyle->SetOptTitle(0);
 
   TCanvas* c1 = new TCanvas();
@@ -50,14 +76,17 @@ void draw_contour(){
   x[0] = 1; y[0] = 1;
   TGraph* best = new TGraph(1,x,y);
 
-  TGraph* g68 = get_contour("2017-ddb1","068");
-  TGraph* g95 = get_contour("2017-ddb1","095");
+  TGraph* g68 = get_contour(".","068");
+  TGraph* g95 = get_contour(".","095");
 
-  TGraph* f68 = get_contour("2017-best","068");
-  TGraph* f95 = get_contour("2017-best","095");
+  float textsize1 = 16/(gPad->GetWh()*gPad->GetAbsHNDC());
 
   g95->SetLineWidth(3);
   g95->SetLineStyle(2);
+  g95->GetXaxis()->SetLabelSize(textsize1);
+  g95->GetXaxis()->SetTitleSize(textsize1);
+  g95->GetYaxis()->SetLabelSize(textsize1);
+  g95->GetYaxis()->SetTitleSize(textsize1);
   g95->Draw("AC");
 
   g95->GetXaxis()->SetTitle("#mu_{ggF}");
@@ -65,15 +94,6 @@ void draw_contour(){
 
   g68->SetLineWidth(3);
   g68->Draw("same");
-
-  f95->SetLineColor(kBlue);
-  f95->SetLineWidth(3);
-  f95->SetLineStyle(2);
-  f95->Draw("same");
-
-  f68->SetLineColor(kBlue);
-  f68->SetLineWidth(3);
-  f68->Draw("same");
 
   best->SetMarkerStyle(29);
   best->SetMarkerSize(2);
@@ -83,14 +103,19 @@ void draw_contour(){
   TLegend* leg = new TLegend(.65,.75,.89,.89);
   leg->SetBorderSize(0);
   leg->AddEntry(best,"SM","p");
-  leg->AddEntry(g68,"Exp. 68% CL, DDB v1","l");
-  leg->AddEntry(g95,"Exp. 95% CL, DDB v1","l");
-  leg->AddEntry(f68,"Exp. 68% CL, DDB v2","l");
-  leg->AddEntry(f95,"Exp. 95% CL, DDB v2","l");
+  leg->AddEntry(g68,(asimov+" 68% CL").c_str(),"l");
+  leg->AddEntry(g95,(asimov+" 95% CL").c_str(),"l");
+  leg->SetTextSize(textsize1);
   leg->Draw();
 
-  c1->SaveAs("contour2d.png");
-  c1->SaveAs("contour2d.pdf");
+  TLatex l2;
+  l2.SetNDC();
+  l2.SetTextFont(42);
+  l2.SetTextSize(textsize1);
+  l2.DrawLatex(0.7,.92,year_string.c_str());
+
+  c1->SaveAs("plots/contour2d.png");
+  c1->SaveAs("plots/contour2d.pdf");
   
   return;
 
