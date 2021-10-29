@@ -23,11 +23,11 @@ cd ../..
 # IMPORTANT: Checkout the recommended tag on the link above                                                                  
 git clone https://github.com/cms-analysis/CombineHarvester.git CombineHarvester
 scramv1 b clean; scramv1 b
-#cd ../..
+cd ../..
 
 # Arguments                                                                                                                   
 year=$1
 
-combine -M FitDiagnostics -m 125 output/testModel${year}/model_combined.root --setParameters rVBF=1,rggF=1,rZbb=1 -t -1 --freezeParameters rVBF,rrZbb --saveShapes --saveWithUncertainties --cminDefaultMinimizerStrategy 0 --robustFit=1 --robustHesse=1 --verbose 9 --toysFrequentist
+combine -M FitDiagnostics -m 125 output/testModel${year}/model_combined.root --setParameters rVBF=1,rggF=1,rZbb=1 -t -1 --saveShapes --saveWithUncertainties --cminDefaultMinimizerStrategy 0 --robustFit=1 --toysFrequentist
 
-xrdcp fitDiagnosticsTest.root root://cmseos.fnal.gov/EOSDIR
+xrdcp -f fitDiagnosticsTest.root root://cmseos.fnal.gov/EOSDIR

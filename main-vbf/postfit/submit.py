@@ -11,13 +11,13 @@ def main():
     thisdir = os.getcwd()
     if "2016" in thisdir:
         year = "2016-postfit"
-        yearstr = "_"+year
+        yearstr = "_2016"
     elif "2017" in thisdir:
         year = "2017-postfit"
-        yearstr = "_"+year
+        yearstr = "_2017"
     elif "2018" in thisdir:
         year = "2018-postfit"
-        yearstr = "_"+year
+        yearstr = "_2018"
 
     print("Submitting for year " + year)
 
@@ -29,7 +29,7 @@ def main():
     outdir = '/store/user/jennetd/fits/'+year+'/'
     os.system('mkdir -p /eos/uscms'+outdir)
 
-    for tag in ['exp_contour68','exp_contour95','exp_significance','exp_shapes','exp_mu_zbb','exp_mu_vbf','exp_mu_ggf']:
+    for tag in ['exp_npimpacts']: #contour68','exp_contour95','exp_significance','exp_shapes','exp_mu_zbb','exp_mu_vbf','exp_mu_ggf']:
         
         print('Submitting '+tag)
 

@@ -133,39 +133,36 @@ def get_template(sName, passed, ptbin, cat, obs, syst, muon=False):
 
     return (np.array(sumw), obs.binning, obs.name, np.array(sumw2))
 
-def shape_to_num(nom, up, down):
+def shape_to_num(var, nom, clip=2):
     nom_rate = np.sum(nom)
-    if nom_rate < .1:
-        return 1.0
-    up_rate = np.sum(up)
-    down_rate = np.sum(down)
+    var_rate = np.sum(var)
 
-    diff = np.abs(up_rate - nom_rate) + np.abs(down_rate - nom_rate)
-    return 1.0 + diff / (2. * nom_rate)
+    if abs(var_rate/nom_rate) > clip:
+        var_rate = clip*nom_rate
 
-def passfailSF(isPass, sName, ptbin, cat, obs, mask, SF=1, SF_unc=0.1, muon=False):
+    return var_rate/nom_rate
+
+def passfailSF(isPass, sName, ptbin, cat, obs, mask, SF=1, SF_unc_up=0.1, SF_unc_down=-0.1, muon=False):
     """
     Return (SF, SF_unc) for a pass/fail scale factor.
     """
     if isPass:
-        return SF, 1. + SF_unc / SF
+        return SF, 1. + SF_unc_up / SF, 1. + SF_unc_down / SF
     else:
         _pass = get_template(sName, 1, ptbin+1, cat, obs=obs, syst='nominal', muon=muon)
-        _pass_rate = np.sum(_pass[0] * mask)
+        _pass_rate = np.sum(_pass[0]*mask)
 
         _fail = get_template(sName, 0, ptbin+1, cat, obs=obs, syst='nominal', muon=muon)
-        _fail_rate = np.sum(_fail[0] * mask)
+        _fail_rate = np.sum(_fail[0]*mask)
 
         if _fail_rate > 0:
             _sf = 1 + (1 - SF) * _pass_rate / _fail_rate
-            _sfunc = 1. - SF_unc * (_pass_rate / _fail_rate)
+            _sfunc_up = 1. - SF_unc_up * (_pass_rate / _fail_rate)
+            _sfunc_down = 1. - SF_unc_down * (_pass_rate / _fail_rate)
 
-            eps=0.0000001
-            if _sfunc < eps:
-                return 0, 0
-            return _sf, _sfunc
+            return _sf, _sfunc_up, _sfunc_down
         else:
-            return 1, 1
+            return 1, 1, 1
 
 def plot_mctf(tf_MCtempl, msdbins, name):
     """
@@ -248,8 +245,8 @@ def ggfvbf_rhalphabet(tmpdir,
     vbf_ttbar_unc = dict({"2016":1.29,"2017":1.34,"2018":1.52})
 
     # TT params
-    tqqeffSF = rl.IndependentParameter('tqqeffSF_{}'.format(year), 1., 0, 10)
-    tqqnormSF = rl.IndependentParameter('tqqnormSF_{}'.format(year), 1., 0, 10)
+    tqqeffSF = rl.IndependentParameter('tqqeffSF_{}'.format(year), 1., -10, 50)
+    tqqnormSF = rl.IndependentParameter('tqqnormSF_{}'.format(year), 1., -10, 50)
 
     # Systematics
     sys_lumi_uncor = rl.NuisanceParameter('CMS_lumi_13TeV_{}'.format(year), 'lnN')
@@ -275,8 +272,12 @@ def ggfvbf_rhalphabet(tmpdir,
     sys_dict['pileup_weight'] = rl.NuisanceParameter('CMS_hbb_PU_{}'.format(year), 'lnN')
     sys_dict['btagWeight'] = rl.NuisanceParameter('CMS_hbb_btagWeight_{}'.format(year), 'lnN')
     sys_dict['btagEffStat'] = rl.NuisanceParameter('CMS_hbb_btagEffStat_{}'.format(year),'lnN')
+    sys_dict['L1Prefiring'] = rl.NuisanceParameter('CMS_L1Prefiring_{}'.format(year),'lnN')
 
-    sys_prefire = rl.NuisanceParameter('CMS_L1Prefiring_{}'.format(year),'lnN')
+    exp_systs = ['JES','JER','UES','jet_trigger','pileup_weight','btagWeight']
+    if year == "2016" or year == "2017":
+        exp_systs += ['L1Prefiring']
+    mu_exp_systs = exp_systs + ['mu_isoweight','mu_idweight','mu_trigger']
 
     sys_ddxeffbb = rl.NuisanceParameter('CMS_eff_bb_{}'.format(year), 'lnN')
     sys_veff = rl.NuisanceParameter('CMS_hbb_veff_{}'.format(year), 'lnN')
@@ -388,7 +389,7 @@ def ggfvbf_rhalphabet(tmpdir,
                 initial_vals = np.array(json.load(f)['initial_vals'])
             print(initial_vals)
 
-            tf_MCtempl = rl.BernsteinPoly('tf_MCtempl_'+cat, (initial_vals.shape[0]-1,initial_vals.shape[1]-1), ['pt', 'rho'], init_params=initial_vals, limits=(-5, 5))
+            tf_MCtempl = rl.BernsteinPoly('tf_MCtempl_'+cat, (initial_vals.shape[0]-1,initial_vals.shape[1]-1), ['pt', 'rho'], init_params=initial_vals, limits=(-20, 20))
             tf_MCtempl_params = qcdeff * tf_MCtempl(ptscaled, rhoscaled)
 
             for ptbin in range(npt[cat]):
@@ -456,7 +457,11 @@ def ggfvbf_rhalphabet(tmpdir,
         tf_MCtempl.parameters = decoVector.correlated_params.reshape(tf_MCtempl.parameters.shape)
         tf_MCtempl_params_final = tf_MCtempl(ptscaled, rhoscaled)
 
-        tf_dataResidual = rl.BernsteinPoly('tf_dataResidual_'+cat, (initial_vals.shape[0]-1,initial_vals.shape[1]-1), ['pt', 'rho'], limits=(-10, 10))
+        # initial values                                                                                                                                         
+        with open('initial_vals_data_'+cat+'.json') as f:
+            initial_vals_data = np.array(json.load(f)['initial_vals'])
+
+        tf_dataResidual = rl.BernsteinPoly('tf_dataResidual_'+cat, (initial_vals_data.shape[0]-1,initial_vals_data.shape[1]-1), ['pt', 'rho'], init_params=initial_vals_data, limits=(-20, 20))
         tf_dataResidual_params = tf_dataResidual(ptscaled, rhoscaled)
         tf_params[cat] = qcdeff * tf_MCtempl_params_final * tf_dataResidual_params
 
@@ -467,7 +472,7 @@ def ggfvbf_rhalphabet(tmpdir,
     samps = ['ggF','VBF','WH','ZH','ttH','ttbar','singlet','Zjets','Zjetsbb','Wjets','VV']
     sigs = ['ggF','VBF']
 
-    cols = ['bin','region','samp','syst','val']
+    cols = ['bin','region','samp','syst','up','val']
     df = pd.DataFrame(columns=cols)
 
     for cat in cats:
@@ -520,36 +525,18 @@ def ggfvbf_rhalphabet(tmpdir,
                         sample.setParamEffect(sys_muveto, 1.005)
                         sample.setParamEffect(sys_tauveto, 1.005)
 
-                        if year == "2016" or year == "2017":
-                            syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='L1PrefiringUp')[0]
-                            syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='L1PrefiringDown')[0]
-                            effect = shape_to_num(nominal,syst_up,syst_do)
-                            sample.setParamEffect(sys_prefire, effect)
-                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'L1Prefiring',effect-1]],columns=cols))
-
-                        for sys in ['JES','JER','UES','jet_trigger','pileup_weight','btagWeight']:
+                        # Experimental systematics
+                        for sys in exp_systs:
                             syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up')[0]
                             syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down')[0]
-                            effect = shape_to_num(nominal,syst_up,syst_do)
-                            if abs(effect-1) > 1:
-                                effect = 2.
 
-                            if abs(effect-1) > eps:
-                                sample.setParamEffect(sys_dict[sys], effect)
-                                df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,effect-1]],columns=cols))
+                            eff_up = shape_to_num(syst_up,nominal)
+                            eff_do = shape_to_num(syst_do,nominal)
 
-                        # DDB SF                                                                      
-                        if sName in ['ggF','VBF','WH','ZH','ggZH','ttH','Zjetsbb']:
-                            sf,sfunc = passfailSF(isPass, sName, binindex, cat+'_', msd, mask, 1, 0.3)
-                            sample.scale(sf)
-                            sample.setParamEffect(sys_ddxeffbb, sfunc)
-                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'DDB',sfunc-1]],columns=cols))
-
-                        # N2DDT SF (V SF)                          
-                        sample.scale(SF[year]['V_SF'])
-                        effect = 1.0 + SF[year]['V_SF_ERR'] / SF[year]['V_SF']
-                        sample.setParamEffect(sys_veff, effect)
-                        df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'N2DDT',effect-1]],columns=cols))
+                            sample.setParamEffect(sys_dict[sys], eff_up, eff_do)
+                            
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,1,eff_up-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,0,eff_do-1]],columns=cols))
 
                         # Jet mass shift/smear                         
                         mtempl = AffineMorphTemplate(templ)
@@ -579,25 +566,27 @@ def ggfvbf_rhalphabet(tmpdir,
                             for sys in Wjets_thsysts:
                                 syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up')[0]
                                 syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down')[0]
-                                effect = shape_to_num(nominal,syst_up,syst_do)
-                                if abs(effect-1) > 1:
-                                    effect = 2.
 
-                                if abs(effect-1) > eps:
-                                    sample.setParamEffect(sys_dict[sys], effect)
-                                    df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,effect-1]],columns=cols))
-                               
+                                eff_up = shape_to_num(syst_up,nominal)
+                                eff_do = shape_to_num(syst_do,nominal)
+
+                                sample.setParamEffect(sys_dict[sys], eff_up, eff_do)
+
+                                df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,1,eff_up-1]],columns=cols))
+                                df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,0,eff_do-1]],columns=cols))
+
                         if sName in ['Zjets','Zjetsbb']:
                             for sys in Zjets_thsysts:
                                 syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up')[0]
                                 syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down')[0]
-                                effect = shape_to_num(nominal,syst_up,syst_do)
-                                if abs(effect-1) > 1:
-                                    effect = 2.
 
-                                if abs(effect-1) > eps:
-                                    sample.setParamEffect(sys_dict[sys], effect)
-                                    df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,effect-1]],columns=cols))
+                                eff_up = shape_to_num(syst_up,nominal)
+                                eff_do = shape_to_num(syst_do,nominal)
+
+                                sample.setParamEffect(sys_dict[sys], eff_up, eff_do)
+
+                                df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,1,eff_up-1]],columns=cols))
+                                df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,0,eff_do-1]],columns=cols))
 
                         # Muon CR phase space unc on ttbar
                         if sName == "ttbar" and cat == "vbf":
@@ -610,60 +599,93 @@ def ggfvbf_rhalphabet(tmpdir,
   
                             fsr18_up = get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRUp')[0]
                             fsr18_do = get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRDown')[0]
-                            effect_fsr = shape_to_num(nominal18,fsr18_up,fsr18_do)
+                            eff_fsr18_up = np.sum(fsr18_up)/np.sum(nominal18)
+                            eff_fsr18_do = np.sum(fsr18_do)/np.sum(nominal18)
 
                             isr18_up = get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_ISRUp')[0]
                             isr18_do = get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_ISRDown')[0]
-                            effect_isr = shape_to_num(nominal18,isr18_up,isr18_do)
+                            eff_isr18_up = np.sum(isr18_up)/np.sum(nominal18)
+                            eff_isr18_do = np.sum(isr18_do)/np.sum(nominal18)
 
                             pdf_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='PDF_weightUp')[0]
                             pdf_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='PDF_weightDown')[0]
-                            effect_pdf = shape_to_num(nominal,pdf_up,pdf_do)
+                            eff_pdf_up = np.sum(pdf_up)/np.sum(nominal)
+                            eff_pdf_do = np.sum(pdf_do)/np.sum(nominal)
                             
                             if sName == 'ggF':
                                 scale_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptUp')[0]
                                 scale_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptDown')[0]
-                                effect_scale = shape_to_num(nominal,scale_up,scale_do)
+                                
+                                eff_scale_up = np.sum(scale_up)/np.sum(nominal)
+                                eff_scale_do = np.sum(scale_do)/np.sum(nominal)
 
-                                sample.setParamEffect(scale_ggF,effect_scale)
-                                sample.setParamEffect(pdf_Higgs_ggF,effect_pdf)
-                                sample.setParamEffect(fsr_ggF,effect_fsr)
-                                sample.setParamEffect(isr_ggF,effect_isr)
+                                sample.setParamEffect(scale_ggF,eff_scale_up,eff_scale_do)
+                                sample.setParamEffect(pdf_Higgs_ggF,eff_pdf_up,eff_pdf_do)
+                                sample.setParamEffect(fsr_ggF,eff_fsr18_up,eff_fsr18_do)
+                                sample.setParamEffect(isr_ggF,eff_isr18_up,eff_isr18_do)
 
                             elif sName == 'VBF':
                                 scale_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptUp')[0]
                                 scale_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptDown')[0]
-                                effect_scale = shape_to_num(nominal,scale_up,scale_do)
 
-                                sample.setParamEffect(scale_VBF,effect_scale)
-                                sample.setParamEffect(pdf_Higgs_VBF,effect_pdf)
-                                sample.setParamEffect(fsr_VBF,effect_fsr)
-                                sample.setParamEffect(isr_VBF,effect_isr)
+                                eff_scale_up = np.sum(scale_up)/np.sum(nominal)
+                                eff_scale_do = np.sum(scale_do)/np.sum(nominal)
+
+                                sample.setParamEffect(scale_VBF,eff_scale_up,eff_scale_do)
+                                sample.setParamEffect(pdf_Higgs_VBF,eff_pdf_up,eff_pdf_do)
+                                sample.setParamEffect(fsr_VBF,eff_fsr18_up,eff_fsr18_do)
+                                sample.setParamEffect(isr_VBF,eff_isr18_up,eff_isr18_do)
 
                             elif sName in ['WH','ZH','ggZH']:
                                 scale_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptUp')[0]
                                 scale_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptDown')[0]
-                                effect_scale = shape_to_num(nominal,scale_up,scale_do)
 
-                                sample.setParamEffect(scale_VH,effect_scale)
-                                sample.setParamEffect(pdf_Higgs_VH,effect_pdf)
-                                sample.setParamEffect(fsr_VH,effect_fsr)
-                                sample.setParamEffect(isr_VH,effect_isr)
+                                eff_scale_up = np.sum(scale_up)/np.sum(nominal)
+                                eff_scale_do = np.sum(scale_do)/np.sum(nominal)
+
+                                sample.setParamEffect(scale_VH,scale_up,scale_do)
+                                sample.setParamEffect(pdf_Higgs_VH,eff_pdf_up,eff_pdf_do)
+                                sample.setParamEffect(fsr_VH,eff_fsr18_up,eff_fsr18_do)
+                                sample.setParamEffect(isr_VH,eff_isr18_up,eff_isr18_do)
 
                             elif sName == 'ttH':
                                 scale_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptUp')[0]
                                 scale_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptDown')[0]
-                                effect_scale = shape_to_num(nominal,scale_up,scale_do)
 
-                                sample.setParamEffect(scale_ttH,effect_scale)
-                                sample.setParamEffect(pdf_Higgs_ttH,effect_pdf)
-                                sample.setParamEffect(fsr_ttH,effect_fsr)
-                                sample.setParamEffect(isr_ttH,effect_isr)
- 
-                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'scale',effect_scale-1]],columns=cols))
-                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'PDF',effect_pdf-1]],columns=cols))
-                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'FSR',effect_fsr-1]],columns=cols))
-                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'ISR',effect_isr-1]],columns=cols))
+                                eff_scale_up = np.sum(scale_up)/np.sum(nominal)
+                                eff_scale_do = np.sum(scale_do)/np.sum(nominal)
+
+                                sample.setParamEffect(scale_ttH,eff_scale_up,eff_scale_do)
+                                sample.setParamEffect(pdf_Higgs_ttH,eff_pdf_up,eff_pdf_do)
+                                sample.setParamEffect(fsr_ttH,eff_fsr18_up,eff_fsr18_do)
+                                sample.setParamEffect(isr_ttH,eff_isr18_up,eff_isr18_do)
+
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'scale',1,eff_scale_up-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'PDF',1,eff_pdf_up-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'FSR',1,eff_fsr18_up-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'ISR',1,eff_isr18_up-1]],columns=cols))
+
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'scale',0,eff_scale_do-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'PDF',0,eff_pdf_do-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'FSR',0,eff_fsr18_do-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'ISR',0,eff_isr18_do-1]],columns=cols))
+                            
+
+                        # Add SFs last!
+                        # DDB SF 
+                        if sName in ['ggF','VBF','WH','ZH','ggZH','ttH','Zjetsbb']:
+                            sf,sfunc_up,sfunc_down = passfailSF(isPass, sName, binindex, cat+'_', msd, mask, 1, SF[year]['BB_SF_UP'], SF[year]['BB_SF_DOWN'])
+                            sample.scale(sf)
+                            sample.setParamEffect(sys_ddxeffbb, sfunc_up, sfunc_down)
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'DDB',1,sfunc_up-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'DDB',0,sfunc_down-1]],columns=cols))
+
+                        # N2DDT SF (V SF)                                                                                                                                              
+                        sample.scale(SF[year]['V_SF'])
+                        effect = 1.0 + SF[year]['V_SF_ERR'] / SF[year]['V_SF']
+                        sample.setParamEffect(sys_veff, effect)
+                        df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'N2DDT',1,effect-1]],columns=cols))
+                        df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'N2DDT',0,effect-1]],columns=cols))
 
                         ch.addSample(sample)
 
@@ -738,36 +760,32 @@ def ggfvbf_rhalphabet(tmpdir,
             if sName == 'QCD':
                 continue
 
-            for sys in ['mu_trigger','mu_isoweight','mu_idweight','JES','JER','UES','pileup_weight','btagWeight']:
+            for sys in mu_exp_systs:
                 syst_up = get_template(sName, isPass, -1, '', obs=msd, syst=sys+'Up', muon=True)[0]
                 syst_do = get_template(sName, isPass, -1, '', obs=msd, syst=sys+'Down', muon=True)[0]
-                effect = shape_to_num(nominal,syst_up,syst_do)
-                if abs(effect-1) > 1:
-                    effect = 2.
+                
+                eff_up = shape_to_num(syst_up,nominal)
+                eff_do = shape_to_num(syst_do,nominal)
 
-                if abs(effect-1) > eps:
-                    sample.setParamEffect(sys_dict[sys], effect)
-                    df = df.append(pd.DataFrame([["mucr",region,sName,sys,effect-1]],columns=cols))
-                    
-            if year == "2016" or year == "2017":
-                syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='L1PrefiringUp')[0]
-                syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='L1PrefiringDown')[0]
-                effect = shape_to_num(nominal,syst_up,syst_do)
-                sample.setParamEffect(sys_prefire, effect)
-                df = df.append(pd.DataFrame([["mucr",region,sName,'L1Prefiring',effect-1]],columns=cols))
+                sample.setParamEffect(sys_dict[sys], eff_up, eff_do)
+
+                df = df.append(pd.DataFrame([["mucr",region,sName,sys,1,eff_up-1]],columns=cols))
+                df = df.append(pd.DataFrame([["mucr",region,sName,sys,0,eff_do-1]],columns=cols))
 
             # DDB SF                                                                                  
             if sName in ['ggF','VBF','WH','ZH','ggZH','ttH','Zjetsbb']:
-                sf,sfunc = passfailSF(isPass, sName, -1, '', msd, mask, 1, 0.3, muon=True)
+                sf,sfunc_up,sfunc_down = passfailSF(isPass, sName, -1, '', msd, mask, 1, SF[year]['BB_SF_UP'], SF[year]['BB_SF_DOWN'], muon = True)
                 sample.scale(sf)
-                sample.setParamEffect(sys_ddxeffbb, sfunc)
-                df = df.append(pd.DataFrame([["mucr",region,sName,'DDB',sfunc-1]],columns=cols))
+                sample.setParamEffect(sys_ddxeffbb, sfunc_up, sfunc_down)
+                df = df.append(pd.DataFrame([["mucr",region,sName,'DDB',1,sfunc_up-1]],columns=cols))
+                df = df.append(pd.DataFrame([["mucr",region,sName,'DDB',0,sfunc_down-1]],columns=cols))
 
             # N2DDT SF (V SF)                                                            
             sample.scale(SF[year]['V_SF'])
             effect = 1.0 + SF[year]['V_SF_ERR'] / SF[year]['V_SF']
             sample.setParamEffect(sys_veff, effect)
-            df = df.append(pd.DataFrame([["mucr",region,sName,'N2DDT',effect-1]],columns=cols))
+            df = df.append(pd.DataFrame([["mucr",region,sName,'N2DDT',1,effect-1]],columns=cols))
+            df = df.append(pd.DataFrame([["mucr",region,sName,'N2DDT',0,effect-1]],columns=cols))
 
             ch.addSample(sample)
 

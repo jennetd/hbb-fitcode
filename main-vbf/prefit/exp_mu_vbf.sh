@@ -22,7 +22,7 @@ cd ../..
 # IMPORTANT: Checkout the recommended tag on the link above                                                                
 git clone https://github.com/cms-analysis/CombineHarvester.git CombineHarvester
 scramv1 b clean; scramv1 b
-#cd ../..
+cd ../..
 
 # Arguments
 year=$1
