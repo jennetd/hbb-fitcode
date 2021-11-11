@@ -140,6 +140,9 @@ def shape_to_num(var, nom, clip=2):
     if abs(var_rate/nom_rate) > clip:
         var_rate = clip*nom_rate
 
+    if var_rate < 0:
+        var_rate = 0
+
     return var_rate/nom_rate
 
 def passfailSF(isPass, sName, ptbin, cat, obs, mask, SF=1, SF_unc_up=0.1, SF_unc_down=-0.1, muon=False):
@@ -643,7 +646,10 @@ def ggfvbf_rhalphabet(tmpdir,
                                 eff_scale_up = np.sum(scale_up)/np.sum(nominal)
                                 eff_scale_do = np.sum(scale_do)/np.sum(nominal)
 
-                                sample.setParamEffect(scale_VH,scale_up,scale_do)
+                                if eff_scale_do < 0:
+                                   eff_scale_do = eff_scale_up
+
+                                sample.setParamEffect(scale_VH,eff_scale_up,eff_scale_do)
                                 sample.setParamEffect(pdf_Higgs_VH,eff_pdf_up,eff_pdf_do)
                                 sample.setParamEffect(fsr_VH,eff_fsr18_up,eff_fsr18_do)
                                 sample.setParamEffect(isr_VH,eff_isr18_up,eff_isr18_do)
