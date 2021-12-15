@@ -49,27 +49,28 @@ def main():
     frozen["AllExp"]="rgx{CMS_hbb_eff.*},rgx{CMS_res_j.*},rgx{CMS_scale_j.*},rgx{CMS_ues_j.*},rgx{CMS_hbb_scale.*},rgx{CMS_hbb_smear.*},rgx{.*mcstat},rgx{CMS_L1Prefiring.*},rgx{CMS_hbb_PU.*},rgx{CMS_.*trigger.*},rgx{CMS_.*mu.*},rgx{CMS_hbb_e_veto.*},rgx{CMS_hbb_tau_veto.*},rgx{CMS_hbb_btagWeight.*},rgx{CMS_hbb_vbfmucr.*},rgx{CMS_hbb_veff.*},rgx{CMS_lumi_13TeV.*},rgx{qcdparam.*}"
     frozen["AllTh"]="rgx{QCDScale_.*},rgx{pdf_.*},rgx{UEPS_.*},rgx{CMS_hbb_.*NLO},rgx{CMS_hbb_.*EW}"
 
-    for k in frozen.keys():
+    for p in ["rggF"]:
+        for k in frozen.keys():
         
-        print('Submitting '+k)
+            print('Submitting '+k)
+        
+            condorfilename = "fit.syst.condor"
+        
+            condor_templ_file = open(condorfilename)
+            localcondor = locdir+'/exp_syst_'+p+"_"+k+".condor"
+            condor_file = open(localcondor,"w")
+            for line in condor_templ_file:
+                line=line.replace('FREEZE',frozen[k])
+                line=line.replace('TAG',k)
+                line=line.replace('POI',p)
+                condor_file.write(line)
+            condor_file.close()
+            
+            os.system("cp exp_syst.sh "+locdir+"/exp_syst_"+k+".sh")
 
-        condorfilename = "fit.syst.condor"
-
-        condor_templ_file = open(condorfilename)
-        localcondor = locdir+'/exp_syst_'+k+".condor"
-        condor_file = open(localcondor,"w")
-        for line in condor_templ_file:
-            line=line.replace('FREEZE',frozen[k])
-            line=line.replace('TAG',k)
-            line=line.replace('EOSDIR',outdir)
-            condor_file.write(line)
-        condor_file.close()
-
-        os.system("cp exp_syst.sh "+locdir+"/exp_syst_"+k+".sh")
-
-        if (os.path.exists('%s.log'  % localcondor)):
-            os.system('rm %s.log' % localcondor)
-        os.system('condor_submit %s' % localcondor)
+            if (os.path.exists('%s.log'  % localcondor)):
+                os.system('rm %s.log' % localcondor)
+            os.system('condor_submit %s' % localcondor)
 
     return 
 

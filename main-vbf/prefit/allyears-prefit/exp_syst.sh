@@ -27,12 +27,14 @@ cd ../..
 # Arguments
 name=$1
 frozen=$2
+poi=$3
 
-modelfile=output/testModel/model_combined.root
+npoints=100
 
-combineTool.py -M Impacts -d $modelfile -m 125 --robustFit 1 --doInitialFit -t -1 --setParameters rVBF=1,rggF=1,rZbb=1 --freezeParameters ${frozen}
+combine -M MultiDimFit -m 125 --setParameters rVBF=1,rggF=1,rZbb=1 -t -1 --cminDefaultMinimizerStrategy 0 --algo grid --points ${npoints} --redefineSignalPOI ${poi} --saveWorkspace -n "_"${poi}${name} -d higgsCombine_Total.MultiDimFit.mH125.root -w w --snapshotName "MultiDimFit" --freezeParameters ${frozen}
 
-mv higgsCombine_initialFit_Test.MultiDimFit.mH125.root higgsCombine_${name}.MultiDimFit.mH125.root
+
+
 
 
 
