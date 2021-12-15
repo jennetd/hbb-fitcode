@@ -1,0 +1,15 @@
+#!/usr/bin/env condor_submit
+
+executable              = logs/exp_syst_TAG.sh
+arguments               = "TAG FREEZE"
+should_transfer_files   = YES
+transfer_input_files    = output
+transfer_output_files   = higgsCombine_TAG.MultiDimFit.mH125.root
+when_to_transfer_output = ON_EXIT_OR_EVICT
+request_memory          = 4000
+output                  = logs/exp_syst_TAG.out
+error                   = logs/exp_syst_TAG.err
+log                     = logs/exp_syst_TAG.log
+
+Queue 1 
+
