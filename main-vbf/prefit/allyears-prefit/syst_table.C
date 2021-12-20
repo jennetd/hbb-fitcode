@@ -121,7 +121,7 @@ void get_table(string poi){
 
   cout << "----------- " << poi << endl;
 
-  vector<string> systnames = {"TFres","TTQ","AllExp","DDB","JESJER","JMSJMR","qcdparam","MCStat","Other","AllTh","ggFtheory","VBFtheory","VHttHtheory","Vtheory"}; 
+  vector<string> systnames = {"TFres","TTQ","AllExp","MCStat","DDB","JMSJMR","JESJER","qcdparam","Other","AllTh","ggFtheory","VBFtheory","VHttHtheory","Vtheory"}; 
 
   vector<double> unc_total = read_from_graph(poi,poi);
   cout << "Total & " << unc_total[1] << " & "<<  unc_total[0] << endl;

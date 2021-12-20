@@ -29,7 +29,7 @@ def main():
     outdir = '/store/user/jennetd/fits/'+year+'/'
     os.system('mkdir -p /eos/uscms'+outdir)
 
-    for tag in ['exp_mu_zbb','exp_mu_vbf','exp_mu_ggf']:#['exp_contour68','exp_contour95','exp_significance','exp_shapes','exp_mu_zbb','exp_mu_vbf','exp_mu_ggf']:
+    for tag in ['fit_batch']:
         
         print('Submitting '+tag)
 

@@ -491,8 +491,6 @@ def ggfvbf_rhalphabet(tmpdir,
 
                     # drop bins outside rho validity                                                
                     mask = validbins[cat][ptbin]
-                    failCh.mask = validbins[cat][ptbin]
-                    passCh.mask = validbins[cat][ptbin]
 
                     ch = rl.Channel('ptbin%dmjjbin%d%s%s%s' % (ptbin, mjjbin, cat, region, year))
                     model.addChannel(ch)
@@ -518,7 +516,7 @@ def ggfvbf_rhalphabet(tmpdir,
                             stype = rl.Sample.BACKGROUND
                     
                         sample = rl.TemplateSample(ch.name + '_' + sName, stype, templ)
-                        sample.autoMCStats(lnN=True)
+                        sample.autoMCStats(lnN=False)
 
                         # Experimental systematics #######################################
                         
@@ -700,6 +698,9 @@ def ggfvbf_rhalphabet(tmpdir,
                     data_obs = get_template('data', isPass, binindex+1, cat+'_', obs=msd, syst='nominal')
 
                     ch.setObservation(data_obs, read_sumw2=True)
+
+                    # drop bins outside rho validity
+                    mask = validbins[cat][ptbin]
 
     for cat in cats:
         for ptbin in range(npt[cat]):

@@ -26,14 +26,10 @@ cd ../..
 
 # Arguments
 year=$1
-poi="rggF"
-frozen="rgx{CMS_.*},rgx{QCDscale_.*},rgx{UEPS_.*},rgx{pdf_.*},rgx{.*mcstat},rgx{qcd.*}"
 
-npoints=1000
+modelfile=output/testModel${year}/model_combined.root
 
-combine -M MultiDimFit -m 125 output/testModel${year}/model_combined.root --setParameters rVBF=1,rggF=1,rZbb=1 -t -1 --cminDefaultMinimizerStrategy 0 --algo grid --points ${npoints} --redefineSignalPOI ${poi} --saveWorkspace -n ${poi}
+# Do initial fit                                                                                                                        
+combineTool.py -M Impacts -d $modelfile -m 125 --robustFit 1 --doInitialFit -t -1 --setParameters rVBF7=1,rVBF8=1,rVBF1=1,rggF1=1,rggF2=1,rggF3=1,rggF4=1,rggF5=1,rggF6=1,rggF7=1
 
-combine -M MultiDimFit -m 125 --setParameters rVBF=1,rggF=1,rZbb=1 -t -1 --cminDefaultMinimizerStrategy 0 --algo grid --points ${npoints} --redefineSignalPOI ${poi} --saveWorkspace -n ${poi}StatOnly -d higgsCombine${poi}.MultiDimFit.mH125.root -w w --snapshotName "MultiDimFit" --freezeParameters ${frozen}
 
-xrdcp -f higgsCombine${poi}.MultiDimFit.mH125.root root://cmseos.fnal.gov/EOSDIR
-xrdcp -f higgsCombine${poi}StatOnly.MultiDimFit.mH125.root root://cmseos.fnal.gov/EOSDIR

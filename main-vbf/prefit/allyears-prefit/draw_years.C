@@ -10,12 +10,16 @@ using namespace RooStats;
 
 bool blind = true;
 
+vector<string> ptbins = {"450 < p_{T} < 500 GeV", "500 < p_{T} < 550 GeV", "550 < p_{T} < 600 GeV",
+			 "600 < p_{T} < 675 GeV", "675 < p_{T} < 800 GeV", "800 < p_{T} < 1200 GeV"};
+vector<string> mjjbins = {"1 < m_{jj} < 2 TeV", "m_{jj} > 2 TeV"};
+
 void draw(int index, bool pass, bool is_ggf, bool log=true){
 
   // Get the year and prefit/postfit/obs from the running directory
   string thisdir = gSystem->pwd();
 
-  string year_string = "137/fb, Run 2";
+  string year_string = "137/fb (13 TeV)";
   double rZbb = 1;
 
   string asimov = "Observed";
@@ -65,14 +69,16 @@ void draw(int index, bool pass, bool is_ggf, bool log=true){
     /* DATA */
     TFile* dataf = new TFile((year+"-signalregion.root").c_str());
 
+    TH1D* firstdata;
+
     if( !pass && is_ggf )
-      data_obs->Add((TH1D*)dataf->Get(("ggf_fail_pt"+to_string(index+1)+"_data_nominal").c_str()));
+      firstdata = (TH1D*)dataf->Get(("ggf_fail_pt"+to_string(index+1)+"_data_nominal").c_str());
     else if( pass && is_ggf)
-      data_obs->Add((TH1D*)dataf->Get(("ggf_pass_pt"+to_string(index+1)+"_data_nominal").c_str()));
+      firstdata = (TH1D*)dataf->Get(("ggf_pass_pt"+to_string(index+1)+"_data_nominal").c_str());
     else if( !pass && !is_ggf)
-      data_obs->Add((TH1D*)dataf->Get(("vbf_fail_mjj"+to_string(index+1)+"_data_nominal").c_str()));
+      firstdata = (TH1D*)dataf->Get(("vbf_fail_mjj"+to_string(index+1)+"_data_nominal").c_str());
     else
-      data_obs->Add((TH1D*)dataf->Get(("vbf_pass_mjj"+to_string(index+1)+"_data_nominal").c_str()));
+      firstdata = (TH1D*)dataf->Get(("vbf_pass_mjj"+to_string(index+1)+"_data_nominal").c_str());
 
     string histdirname = "shapes_fit_s/" + name + year + "/";
 
@@ -86,15 +92,58 @@ void draw(int index, bool pass, bool is_ggf, bool log=true){
     bkgHiggs->Add((TH1D*)f->Get((histdirname+"ggZH").c_str()));
     bkgHiggs->Add((TH1D*)f->Get((histdirname+"ttH").c_str()));
 
-    TotalBkg->Add((TH1D*)f->Get((histdirname+"/total_background").c_str()));
+    //    TotalBkg->Add((TH1D*)f->Get((histdirname+"/total_background").c_str()));
     VV->Add((TH1D*)f->Get((histdirname+"VV").c_str()));
     singlet->Add((TH1D*)f->Get((histdirname+"singlet").c_str()));
     ttbar->Add((TH1D*)f->Get((histdirname+"ttbar").c_str()));
     Zjets->Add((TH1D*)f->Get((histdirname+"Zjets").c_str()));
     Zjetsbb->Add((TH1D*)f->Get((histdirname+"Zjetsbb").c_str()));
     Wjets->Add((TH1D*)f->Get((histdirname+"Wjets").c_str()));
-    qcd->Add((TH1D*)f->Get((histdirname+"qcd").c_str()));
+    //    qcd->Add((TH1D*)f->Get((histdirname+"qcd").c_str()));
 
+    TH1D* firstqcd = (TH1D*)f->Get((histdirname+"qcd").c_str());
+    TH1D* firstbkg = (TH1D*)f->Get((histdirname+"/total_background").c_str());
+    if( thisbin == "pt1" ){
+      firstbkg->SetBinContent(23,0);
+      firstbkg->SetBinContent(22,0);
+      firstbkg->SetBinContent(21,0);
+      firstbkg->SetBinContent(20,0);
+      firstbkg->SetBinContent(19,0);
+      
+      firstqcd->SetBinContent(23,0);
+      firstqcd->SetBinContent(22,0);
+      firstqcd->SetBinContent(21,0);
+      firstqcd->SetBinContent(20,0);
+      firstqcd->SetBinContent(19,0);
+      
+      firstdata->SetBinContent(23,0);
+      firstdata->SetBinContent(22,0);
+      firstdata->SetBinContent(21,0);
+      firstdata->SetBinContent(20,0);
+      firstdata->SetBinContent(19,0);
+    }
+    else if( thisbin == "pt2" ){
+      firstbkg->SetBinContent(23,0);
+      firstbkg->SetBinContent(22,0);
+      firstbkg->SetBinContent(21,0);
+      
+      firstqcd->SetBinContent(23,0);
+      firstqcd->SetBinContent(22,0);
+      firstqcd->SetBinContent(21,0);
+      
+      firstdata->SetBinContent(23,0);
+      firstdata->SetBinContent(22,0);
+      firstdata->SetBinContent(21,0);
+    }
+    else if( thisbin == "pt6" ){
+      firstbkg->SetBinContent(1,0);
+      firstqcd->SetBinContent(1,0);
+      firstdata->SetBinContent(1,0);
+    }
+    
+    TotalBkg->Add(firstbkg);
+    data_obs->Add(firstdata);
+    qcd->Add(firstqcd);
   }
 
   // blind data!
@@ -169,11 +218,21 @@ void draw(int index, bool pass, bool is_ggf, bool log=true){
   TotalBkg->SetLineColor(kRed);
   TotalBkg->SetFillColor(kRed);
   TotalBkg->SetFillStyle(3001);
+
+  double xmax = 201;
+  double xmin = 40;
+
+  if(thisbin == "pt1") xmax = 166;
+  if(thisbin == "pt2") xmax = 180;
+  if(thisbin == "pt6") xmin = 47;
+
   double max = TotalBkg->GetMaximum();
   TotalBkg->GetYaxis()->SetRangeUser(0.1,1000*max);
-  if( !log ) TotalBkg->GetYaxis()->SetRangeUser(0,1.3*max);
+  TotalBkg->GetXaxis()->SetRangeUser(xmin,xmax);
+  if( !log ) TotalBkg->GetYaxis()->SetRangeUser(0,1.7*max);
   TotalBkg->GetYaxis()->SetTitle("Events / 7 GeV");
   TotalBkg->GetXaxis()->SetTitle("m_{sd} [GeV]");
+  TotalBkg->GetYaxis()->SetMaxDigits(4);
 
   THStack *bkg = new THStack("bkg","");
   if( log ){
@@ -210,6 +269,9 @@ void draw(int index, bool pass, bool is_ggf, bool log=true){
   pad2->SetTopMargin(0.00001);
   pad2->SetBottomMargin(0.3);
   pad2->SetBorderMode(0);
+
+  pad1->SetLeftMargin(0.15);
+  pad2->SetLeftMargin(0.15);
   pad1->Draw();
   pad2->Draw();
 
@@ -218,6 +280,7 @@ void draw(int index, bool pass, bool is_ggf, bool log=true){
 
   TotalBkg->GetYaxis()->SetTitleSize(textsize1);
   TotalBkg->GetYaxis()->SetLabelSize(textsize1);
+  TotalBkg->GetYaxis()->SetTitleOffset(2*pad1->GetAbsHNDC());
 
   pad1->cd();
   if( log ) pad1->SetLogy();
@@ -238,8 +301,8 @@ void draw(int index, bool pass, bool is_ggf, bool log=true){
   data_obs->Draw("pesame");
   data_obs->Draw("axissame");
   
-  double x1=.6, y1=.88;
-  TLegend* leg = new TLegend(x1,y1,x1+.3,y1-.3);
+  double x1=.6, y1=.86;
+  TLegend* leg = new TLegend(x1,y1,x1+.3,y1-.32);
   leg->SetBorderSize(0);
   leg->SetFillStyle(0);
   leg->SetNColumns(2);
@@ -264,7 +327,7 @@ void draw(int index, bool pass, bool is_ggf, bool log=true){
   l1.SetNDC();
   l1.SetTextFont(42);
   l1.SetTextSize(textsize1);
-  l1.DrawLatex(0.2,.92,"CMS Preliminary");
+  l1.DrawLatex(0.2,.82,"#bf{CMS} Preliminary");
 
   TLatex l2;
   l2.SetNDC();
@@ -276,42 +339,78 @@ void draw(int index, bool pass, bool is_ggf, bool log=true){
   l3.SetNDC();
   l3.SetTextFont(42);
   l3.SetTextSize(textsize1);
-  string text = "DDB fail";
+  string text = "DeepDoubleB Fail Region";
   if( pass )
-    text = "DDB pass";
-  if( is_ggf )
-    text += ", ggF cat. ("+asimov+")";
-  else
-    text += ", VBF cat. ("+asimov+")";
-  l3.DrawLatex(0.15,.82,text.c_str());
+    text = "DeepDoubleB Pass Region";
+  l3.DrawLatex(0.2,.77,text.c_str());
 
   TLatex l4;
   l4.SetNDC();
   l4.SetTextFont(42);
   l4.SetTextSize(textsize1);
-  string text2 = "p_{T}^{H} bin "+to_string(index+1);  
+  string text2 = "ggF category";                                                                                 
   if( !is_ggf )
-    text2 = "m_{jj} bin "+to_string(index+1);
-  l4.DrawLatex(0.15,.75,text2.c_str());
+    text2 = "VBF category";                                                                                       
+  l4.DrawLatex(0.2,.72,text2.c_str());
+
+  TLatex l5;
+  l5.SetNDC();
+  l5.SetTextFont(42);
+  l5.SetTextSize(textsize1);
+  string text3 = ptbins.at(index);
+  if( !is_ggf )
+    text3 = mjjbins.at(index);
+  l5.DrawLatex(0.2,.67,text3.c_str());
   
   pad2->cd();
-  TH1D* TotalBkg_ratio = (TH1D*)TotalBkg->Clone("TotalBkg_ratio");
-  TotalBkg_ratio->Divide(TotalBkg_ratio);
-  TotalBkg_ratio->GetYaxis()->SetTitleSize(textsize2);
-  TotalBkg_ratio->GetYaxis()->SetLabelSize(textsize2);
-  TotalBkg_ratio->GetXaxis()->SetTitleSize(textsize2);
-  TotalBkg_ratio->GetXaxis()->SetLabelSize(textsize2);
-  TotalBkg_ratio->SetMarkerSize(0);
-  TotalBkg_ratio->Draw("e2");
 
-  TH1D* data_obs_ratio = (TH1D*)data_obs->Clone("data_obs_ratio");
-  data_obs_ratio->Divide(TotalBkg);
+  TH1D* TotalBkg_sub = (TH1D*)TotalBkg->Clone("TotalBkg_sub");
+  TotalBkg_sub->Reset();
+  TH1D* data_obs_sub = (TH1D*)data_obs->Clone("data_obs_ratio");
+  data_obs_sub->Reset();
 
-  double max2 = data_obs_ratio->GetMaximum();
-  TotalBkg_ratio->GetYaxis()->SetRangeUser(0.6,1.3*max2);
-  
-  TotalBkg_ratio->Draw("e2");
-  data_obs_ratio->Draw("pesame");
+  TH1D* VBF_sub = (TH1D*)VBF->Clone("VBF_sub");
+  VBF_sub->Reset();
+  TH1D* ggF_sub = (TH1D*)ggF->Clone("ggF_sub");
+  ggF_sub->Reset();
+
+  for(int i=1; i<TotalBkg_sub->GetNbinsX()+1; i++){
+    TotalBkg_sub->SetBinError(i,TotalBkg->GetBinError(i)/data_obs->GetBinError(i));
+
+    data_obs_sub->SetBinContent(i,(data_obs->GetBinContent(i)-TotalBkg->GetBinContent(i))/data_obs->GetBinError(i));
+    data_obs_sub->SetBinError(i,data_obs->GetBinError(i)/data_obs->GetBinError(i));
+
+    VBF_sub->SetBinContent(i,VBF->GetBinContent(i)/data_obs->GetBinError(i));
+    ggF_sub->SetBinContent(i,ggF->GetBinContent(i)/data_obs->GetBinError(i));
+  }
+
+  TotalBkg_sub->GetYaxis()->SetTitleSize(textsize2);
+  TotalBkg_sub->GetYaxis()->SetLabelSize(textsize2);
+  TotalBkg_sub->GetXaxis()->SetTitleSize(textsize2);
+  TotalBkg_sub->GetXaxis()->SetLabelSize(textsize2);
+  TotalBkg_sub->GetYaxis()->SetTitleOffset(2*pad2->GetAbsHNDC());
+  TotalBkg_sub->GetYaxis()->SetTitle("(Data - Bkg)/#sigma_{Data}");
+  TotalBkg_sub->SetMarkerSize(0);
+
+  // blind data!                                                                                                                                                              
+  if( blind  ){
+    for(int i=10; i<15; i++){
+      TotalBkg_sub->SetBinError(i,0);
+      data_obs_sub->SetBinContent(i,0);
+      data_obs_sub->SetBinError(i,0);
+    }
+  }
+
+  double min2 = data_obs_sub->GetMinimum();
+  double max2 = data_obs_sub->GetMaximum();
+  if( !pass ){
+    max2 += 1;
+    min2 -= 1;
+  }
+  TotalBkg_sub->GetYaxis()->SetRangeUser(1.3*min2,1.3*max2);
+
+  TotalBkg_sub->Draw("e2");
+  data_obs_sub->Draw("pesame");
 
   if( !log ) name += "_lin";
 
@@ -325,18 +424,18 @@ void draw(int index, bool pass, bool is_ggf, bool log=true){
 void draw_years(){
 
   for(int i=0; i<6; i++){
-    draw(i,0,1,1);
-    draw(i,1,1,1);
+    //    draw(i,0,1,1);
+    //    draw(i,1,1,1);
 
-    draw(i,0,1,0);
+    //    draw(i,0,1,0);
     draw(i,1,1,0);
   }
     
   for(int i=0; i<2; i++){
-    draw(i,0,0,1);
-    draw(i,0,1,1);
+    //    draw(i,0,0,1);
+    //    draw(i,0,1,1);
 
-    draw(i,0,0,0);
+    //    draw(i,0,0,0);
     draw(i,1,0,0);
   }
 

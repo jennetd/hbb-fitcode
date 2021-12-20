@@ -27,12 +27,13 @@ cd ../..
 # Arguments
 year=$1
 poi="rVBF"
+frozen="rgx{CMS_.*},rgx{QCDscale_.*},rgx{UEPS_.*},rgx{pdf_.*},rgx{.*mcstat},rgx{qcd.*}"
 
 npoints=1000
 
 combine -M MultiDimFit -m 125 output/testModel${year}/model_combined.root --setParameters rVBF=1,rggF=1,rZbb=1 -t -1 --cminDefaultMinimizerStrategy 0 --algo grid --points ${npoints} --redefineSignalPOI ${poi} --saveWorkspace -n ${poi}
 
-combine -M MultiDimFit -m 125 --setParameters rVBF=1,rggF=1,rZbb=1 -t -1 --cminDefaultMinimizerStrategy 0 --algo grid --points ${npoints} --redefineSignalPOI ${poi} --saveWorkspace -n ${poi}StatOnly -d higgsCombine${poi}.MultiDimFit.mH125.root -w w --snapshotName "MultiDimFit" --freezeParameters rgx{CMS_.*},rgx{QCDscale_.*},rgx{UEPS_.*},rgx{pdf_.*},rgx{.*mcstat}
+combine -M MultiDimFit -m 125 --setParameters rVBF=1,rggF=1,rZbb=1 -t -1 --cminDefaultMinimizerStrategy 0 --algo grid --points ${npoints} --redefineSignalPOI ${poi} --saveWorkspace -n ${poi}StatOnly -d higgsCombine${poi}.MultiDimFit.mH125.root -w w --snapshotName "MultiDimFit" --freezeParameters ${frozen}
 
 xrdcp -f higgsCombine${poi}.MultiDimFit.mH125.root root://cmseos.fnal.gov/EOSDIR
 xrdcp -f higgsCombine${poi}StatOnly.MultiDimFit.mH125.root root://cmseos.fnal.gov/EOSDIR

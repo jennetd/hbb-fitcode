@@ -46,7 +46,7 @@ void draw_contour(){
   string thisdir = gSystem->pwd();
 
   string year = "all";
-  string year_string = "137/fb, Run 2";
+  string year_string = "137/fb (13 TeV)";
   double rZbb = 1;
 
   if(thisdir.find("2016") != std::string::npos){
@@ -79,7 +79,7 @@ void draw_contour(){
   TGraph* g68 = get_contour(".","068");
   TGraph* g95 = get_contour(".","095");
 
-  float textsize1 = 16/(gPad->GetWh()*gPad->GetAbsHNDC());
+  float textsize1 = 18/(gPad->GetWh()*gPad->GetAbsHNDC());
 
   g95->SetLineWidth(3);
   g95->SetLineStyle(2);
@@ -87,6 +87,8 @@ void draw_contour(){
   g95->GetXaxis()->SetTitleSize(textsize1);
   g95->GetYaxis()->SetLabelSize(textsize1);
   g95->GetYaxis()->SetTitleSize(textsize1);
+  g95->GetHistogram()->SetMaximum(6);
+  //g95->GetYaxis()->SetLimits(-10,10);
   g95->Draw("AC");
 
   g95->GetXaxis()->SetTitle("#mu_{ggF}");
@@ -100,13 +102,19 @@ void draw_contour(){
   best->SetMarkerColor(kRed);
   best->Draw("p");
 
-  TLegend* leg = new TLegend(.65,.75,.89,.89);
+  TLegend* leg = new TLegend(.6,.7,.89,.85);
   leg->SetBorderSize(0);
   leg->AddEntry(best,"SM","p");
   leg->AddEntry(g68,(asimov+" 68% CL").c_str(),"l");
   leg->AddEntry(g95,(asimov+" 95% CL").c_str(),"l");
   leg->SetTextSize(textsize1);
   leg->Draw();
+
+  TLatex l1;
+  l1.SetNDC();
+  l1.SetTextFont(42);
+  l1.SetTextSize(textsize1);
+  l1.DrawLatex(0.15,.82,"#bf{CMS} Preliminary");
 
   TLatex l2;
   l2.SetNDC();

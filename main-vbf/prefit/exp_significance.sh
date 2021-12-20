@@ -29,10 +29,10 @@ cd ../..
 year=$1
 
 echo "VBF SIGNIFICANCE"
-combine -M Significance -m 125 --signif output/testModel${year}/model_combined.root --cminDefaultMinimizerStrategy 0 -t -1 --redefineSignalPOI rVBF  --verbose 9 --setParameters rVBF=1,rggF=1,rZbb=1
+combine -M Significance -m 125 --signif output/testModel${year}/model_combined.root --cminDefaultMinimizerStrategy 0 -t -1 --redefineSignalPOI rVBF  --verbose 9 --setParameters rVBF=1,rggF=1,rZbb=1 --freezeParameters rggF,rZbb
 
 echo "GGF SIGNIFICANCE"
-combine -M Significance -m 125 --signif output/testModel${year}/model_combined.root --cminDefaultMinimizerStrategy 0 -t -1 --redefineSignalPOI rggF --verbose 9 --setParameters rVBF=1,rggF=1,rZbb=1
+combine -M Significance -m 125 --signif output/testModel${year}/model_combined.root --cminDefaultMinimizerStrategy 0 -t -1 --redefineSignalPOI rggF --verbose 9 --setParameters rVBF=1,rggF=1,rZbb=1 --freezeParameters rVBF,rZbb
 
 echo "Zbb SIGNIFICANCE"
-combine -M Significance -m 125 --signif output/testModel${year}/model_combined.root --cminDefaultMinimizerStrategy 0 -t -1 --redefineSignalPOI rZbb --verbose 9 --setParameters rVBF=1,rggF=1,rZbb=1
+combine -M Significance -m 125 --signif output/testModel${year}/model_combined.root --cminDefaultMinimizerStrategy 0 -t -1 --redefineSignalPOI rZbb --verbose 9 --setParameters rVBF=1,rggF=1,rZbb=1 --freezeParameters rggF,rVBF
