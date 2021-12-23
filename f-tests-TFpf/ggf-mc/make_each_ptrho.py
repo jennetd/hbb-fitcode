@@ -23,7 +23,7 @@ if __name__ == '__main__':
             os.chdir(thedir)
 
             # Link what you need
-            os.system("ln -s ../../../../"+year+"-prefit/signalregion.root .")
+            os.system("ln -s ../../../../main-vbf/prefit/"+year+"-prefit/signalregion.root .")
             os.system("ln -s ../../make_cards_qcd.py .")
 
             # Create your json files of initial values
@@ -46,7 +46,7 @@ if __name__ == '__main__':
             os.chdir("../../")
 
             # Run the first fit
-            combine_cmd = "combineTool.py -M MultiDimFit -m 125 -d output/testModel_"+year+"/testModel_"+year+"_combined.root --saveWorkspace \
+            combine_cmd = "combineTool.py -M MultiDimFit -m 125 -d output/testModel_"+year+"/model_combined.root --saveWorkspace \
             --setParameters r=0 --freezeParameters r -n \"Snapshot\" \
             --robustFit=1 --cminDefaultMinimizerStrategy 0"
             os.system(combine_cmd)

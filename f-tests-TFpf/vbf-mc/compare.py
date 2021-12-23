@@ -3,19 +3,21 @@ import numpy as np
 import ROOT
 import argparse
 
-def gen_toys(infile, ntoys):
+def gen_toys(infile, ntoys, seed=123456):
     combine_cmd = "combineTool.py -M GenerateOnly -m 125 -d " + infile + ".root \
     --snapshotName MultiDimFit --bypassFrequentistFit \
     --setParameters r=0 --freezeParameters r \
-    -n \"Toys\" -t "+str(ntoys)+" --saveToys"
+    -n \"Toys\" -t "+str(ntoys)+" --saveToys \
+    --seed "+str(seed)
     os.system(combine_cmd)
 
-def GoF(infile, ntoys):
+def GoF(infile, ntoys, seed=123456):
 
     combine_cmd = "combineTool.py -M GoodnessOfFit -m 125 -d " + infile + ".root \
     --snapshotName MultiDimFit --bypassFrequentistFit \--setParameters r=0 --freezeParameters r \
-    -n \"Toys." + infile + "\" -t " + str(ntoys) + " --algo \"saturated\" --toysFile higgsCombineToys.GenerateOnly.mH125.123456.root \
-    --cminDefaultMinimizerStrategy 0"
+    -n \"Toys." + infile + "\" -t " + str(ntoys) + " --algo \"saturated\" --toysFile higgsCombineToys.GenerateOnly.mH125."+str(seed)+".root \
+    --cminDefaultMinimizerStrategy 0 \
+    --seed "+str(seed)
     os.system(combine_cmd)
 
 def Ftest(lambda1,lambda2,p1,p2,nbins=23*6):
@@ -32,11 +34,13 @@ if __name__ == '__main__':
     parser.add_argument('-p','--pt',nargs='+',help='pt of baseline')
     parser.add_argument('-r','--rho',nargs='+',help='rho of baseline')
     parser.add_argument('-n','--ntoys',nargs='+',help='number of toys')
+    parser.add_argument('-i','--index',nargs='+',help='index for random seed')
     args = parser.parse_args()
 
-    pt = int(args.pt[0])
+    pt = 0
     rho = int(args.rho[0])
     ntoys = int(args.ntoys[0])
+    seed = 123456+int(args.index[0])*100+31
     
     p1 = pt+rho
     p2 = pt+rho+1
@@ -64,19 +68,19 @@ if __name__ == '__main__':
         os.system("cp ../"+alt+"/higgsCombineSnapshot.MultiDimFit.mH125.root alternative.root")
 
         # Generate the toys
-        gen_toys("baseline",ntoys)
+        gen_toys("baseline",ntoys,seed=seed)
         
         # run baseline gof
-        GoF("baseline",ntoys)
-        infile1 = ROOT.TFile.Open("higgsCombineToys.baseline.GoodnessOfFit.mH125.123456.root")
+        GoF("baseline",ntoys,seed=seed)
+        infile1 = ROOT.TFile.Open("higgsCombineToys.baseline.GoodnessOfFit.mH125."+str(seed)+".root")
         tree1= infile1.Get("limit")
         lambda1_toys = []
         for j in range(tree1.GetEntries()):
             tree1.GetEntry(j)
             lambda1_toys += [getattr(tree1,"limit")]
 
-        GoF("alternative",ntoys)    
-        infile2 = ROOT.TFile.Open("higgsCombineToys.alternative.GoodnessOfFit.mH125.123456.root")
+        GoF("alternative",ntoys,seed=seed)    
+        infile2 = ROOT.TFile.Open("higgsCombineToys.alternative.GoodnessOfFit.mH125."+str(seed)+".root")
         tree2 = infile2.Get("limit")
         lambda2_toys = []
         for j in range(tree2.GetEntries()):
