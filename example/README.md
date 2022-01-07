@@ -43,8 +43,8 @@ NB: no stat only likelihood is calculated here since the model so far does not i
 
 Two dimensional likelihood contours:
 ```
-./exp_contour.sh 68
-./exp_contour.sh 95
+./exp_contour.sh 0.68
+./exp_contour.sh 0.95
 root -l draw_contour.C
 ```
 
