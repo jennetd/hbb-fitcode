@@ -1,0 +1,36 @@
+# Datacard for <Channel (ptbin5mjjbin0ggffail2016) instance at 0x7f298f544950> generated on 2022-01-07 14:35:57.124761
+imax 1 # number of categories ('bins' but here we are using shape templates)
+jmax 11 # number of samples minus 1
+kmax 2 # number of nuisance parameters
+shapes * ptbin5mjjbin0ggffail2016 testModel_2016.root testModel_2016:ptbin5mjjbin0ggffail2016_$PROCESS testModel_2016:ptbin5mjjbin0ggffail2016_$PROCESS_$SYSTEMATIC
+bin ptbin5mjjbin0ggffail2016
+observation 143701.000
+bin                             ptbin5mjjbin0ggffail2016  ptbin5mjjbin0ggffail2016  ptbin5mjjbin0ggffail2016  ptbin5mjjbin0ggffail2016  ptbin5mjjbin0ggffail2016  ptbin5mjjbin0ggffail2016  ptbin5mjjbin0ggffail2016  ptbin5mjjbin0ggffail2016  ptbin5mjjbin0ggffail2016  ptbin5mjjbin0ggffail2016  ptbin5mjjbin0ggffail2016  ptbin5mjjbin0ggffail2016
+process                                              ggF                       VBF                        WH                        ZH                       ttH                     ttbar                   singlet                     Zjets                   Zjetsbb                     Wjets                        VV                       qcd
+process                                               -1                         0                         1                         2                         3                         4                         5                         6                         7                         8                         9                        10
+rate                                               1.106                     0.558                     0.027                     0.050                     0.769                   764.965                   170.143                   890.864                    92.737                  2337.682                    77.653                     1.000
+CMS_lumi_13TeV_2016 lnN                            1.010                     1.010                     1.010                     1.010                     1.010                     1.010                     1.010                     1.010                     1.010                     1.010                     1.010                         -
+CMS_lumi_13TeV_correlated_ lnN                     1.006                     1.006                     1.006                     1.006                     1.006                     1.006                     1.006                     1.006                     1.006                     1.006                     1.006                         -
+qcdparam_ggf_ptbin5_msdbin0 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin1 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin10 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin11 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin12 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin13 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin14 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin15 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin16 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin17 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin18 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin19 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin2 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin20 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin21 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin22 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin3 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin4 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin5 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin6 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin7 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin8 extArg testModel_2016.root:testModel_2016
+qcdparam_ggf_ptbin5_msdbin9 extArg testModel_2016.root:testModel_2016

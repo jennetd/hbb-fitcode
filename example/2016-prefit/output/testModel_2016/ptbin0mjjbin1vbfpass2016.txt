@@ -1,0 +1,40 @@
+# Datacard for <Channel (ptbin0mjjbin1vbfpass2016) instance at 0x7f298f539cd0> generated on 2022-01-07 14:35:57.137747
+imax 1 # number of categories ('bins' but here we are using shape templates)
+jmax 9 # number of samples minus 1
+kmax 4 # number of nuisance parameters
+shapes * ptbin0mjjbin1vbfpass2016 testModel_2016.root testModel_2016:ptbin0mjjbin1vbfpass2016_$PROCESS testModel_2016:ptbin0mjjbin1vbfpass2016_$PROCESS_$SYSTEMATIC
+bin ptbin0mjjbin1vbfpass2016
+observation 98.000
+bin                             ptbin0mjjbin1vbfpass2016  ptbin0mjjbin1vbfpass2016  ptbin0mjjbin1vbfpass2016  ptbin0mjjbin1vbfpass2016  ptbin0mjjbin1vbfpass2016  ptbin0mjjbin1vbfpass2016  ptbin0mjjbin1vbfpass2016  ptbin0mjjbin1vbfpass2016  ptbin0mjjbin1vbfpass2016  ptbin0mjjbin1vbfpass2016
+process                                              ggF                       VBF                        ZH                       ttH                     ttbar                   singlet                     Zjets                   Zjetsbb                     Wjets                       qcd
+process                                               -1                         0                         1                         2                         3                         4                         5                         6                         7                         8
+rate                                               0.515                     1.837                     0.003                     0.011                     1.913                     0.814                     0.928                     4.990                     0.770                     1.000
+CMS_lumi_13TeV_2016 lnN                            1.010                     1.010                     1.010                     1.010                     1.010                     1.010                     1.010                     1.010                     1.010                         -
+CMS_lumi_13TeV_correlated_ lnN                     1.006                     1.006                     1.006                     1.006                     1.006                     1.006                     1.006                     1.006                     1.006                         -
+tf_MCtempl_vbf2016_deco0 param 0 1
+tf_MCtempl_vbf2016_deco1 param 0 1
+qcdparam_vbf_ptbin0_msdbin0 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin1 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin10 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin11 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin12 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin13 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin14 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin15 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin16 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin17 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin18 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin19 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin2 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin20 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin21 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin22 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin3 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin4 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin5 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin6 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin7 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin8 extArg testModel_2016.root:testModel_2016
+qcdparam_vbf_ptbin0_msdbin9 extArg testModel_2016.root:testModel_2016
+tf_dataResidual_2016vbf_pt_par0_rho_par0 extArg testModel_2016.root:testModel_2016
+tf_dataResidual_2016vbf_pt_par0_rho_par1 extArg testModel_2016.root:testModel_2016

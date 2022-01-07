@@ -1,0 +1,37 @@
+# Datacard for <Channel (muonCRfail2016) instance at 0x7fcdc493abd0> generated on 2022-01-07 12:14:16.677334
+imax 1 # number of categories ('bins' but here we are using shape templates)
+jmax 6 # number of samples minus 1
+kmax 22 # number of nuisance parameters
+shapes * muonCRfail2016 testModel_2016.root testModel_2016:muonCRfail2016_$PROCESS testModel_2016:muonCRfail2016_$PROCESS_$SYSTEMATIC
+bin muonCRfail2016
+observation 3601.000
+bin                                muonCRfail2016  muonCRfail2016  muonCRfail2016  muonCRfail2016  muonCRfail2016  muonCRfail2016  muonCRfail2016
+process                                     ttbar             QCD         singlet           Zjets         Zjetsbb           Wjets              VV
+process                                         1               2               3               4               5               6               7
+rate                                     3141.773         359.451         366.198           1.437           0.453           2.791           4.460
+CMS_L1Prefiring_2016 lnN              0.996/1.004               -     0.996/1.004     0.996/1.004     0.999/1.001     0.997/1.003     0.992/1.008
+CMS_eff_bb_2016 lnN                             -               -               -               -     0.994/1.006               -               -
+CMS_hbb_PU_2016 lnN                   0.997/1.010               -     0.995/1.013     1.070/0.932     0.940/1.089     0.972/1.028     0.932/1.100
+CMS_hbb_btagWeight_2016 lnN           1.012/0.988               -     1.011/0.988     1.008/0.991     1.025/0.975     1.022/0.978     1.033/0.967
+CMS_hbb_e_veto_2016 lnN                     1.005           1.005           1.005           1.005           1.005           1.005           1.005
+CMS_hbb_mu_trigger_2016 lnN           1.003/0.997               -     1.003/0.997     1.005/0.995     1.003/0.997     1.007/0.993     1.006/0.994
+CMS_hbb_tau_veto_2016 lnN                   1.005           1.005           1.005           1.005           1.005           1.005           1.005
+CMS_hbb_veff_2016 lnN                       1.019               -           1.019           1.019           1.019           1.019           1.019
+CMS_lumi_13TeV_2016 lnN                     1.010           1.010           1.010           1.010           1.010           1.010           1.010
+CMS_lumi_13TeV_correlated_ lnN              1.006           1.006           1.006           1.006           1.006           1.006           1.006
+CMS_mu_id_2016 lnN                    1.001/0.999               -     1.001/0.999     1.001/0.999     1.001/0.999     1.001/0.999     1.001/0.999
+CMS_mu_iso_2016 lnN                   1.000/1.000               -     1.000/1.000     1.000/1.000     1.000/1.000     1.000/1.000     1.000/1.000
+CMS_res_j_2016 lnN                    1.046/1.013               -     1.039/1.012     1.092/1.051     1.035/1.035     1.031/0.954     1.045/0.944
+CMS_scale_j_2016 lnN                  1.062/0.994               -     1.057/1.000     1.152/0.991     1.035/1.035     1.002/1.002     1.085/0.944
+CMS_ues_j_2016 lnN                    1.028/1.028               -     1.026/1.026     0.991/0.991     1.035/1.035     1.002/1.002     1.002/1.002
+muonCRfail2016_QCD_mcstat lnN                   -           1.115               -               -               -               -               -
+muonCRfail2016_VV_mcstat lnN                    -               -               -               -               -               -           1.227
+muonCRfail2016_Wjets_mcstat lnN                 -               -               -               -               -           1.237               -
+muonCRfail2016_Zjets_mcstat lnN                 -               -               -           1.227               -               -               -
+muonCRfail2016_Zjetsbb_mcstat lnN               -               -               -               -           1.425               -               -
+muonCRfail2016_singlet_mcstat lnN               -               -           1.024               -               -               -               -
+muonCRfail2016_ttbar_mcstat lnN             1.006               -               -               -               -               -               -
+tqqeffSF_2016 extArg testModel_2016.root:testModel_2016
+tqqnormSF_2016 extArg testModel_2016.root:testModel_2016
+tqqeffSF_2016_effect_muonCRfail2016_ttbar rateParam muonCRfail2016 ttbar (((1-@0)*0.006655210180770677)+1) tqqeffSF_2016
+tqqnormSF_2016_effect_muonCRfail2016_ttbar rateParam muonCRfail2016 ttbar (1*@0) tqqnormSF_2016
