@@ -76,8 +76,8 @@ void draw_contour(){
   x[0] = 1; y[0] = 1;
   TGraph* best = new TGraph(1,x,y);
 
-  TGraph* g68 = get_contour(".","068");
-  TGraph* g95 = get_contour(".","095");
+  TGraph* g68 = get_contour(".","0.68");
+  TGraph* g95 = get_contour(".","0.95");
 
   float textsize1 = 18/(gPad->GetWh()*gPad->GetAbsHNDC());
 

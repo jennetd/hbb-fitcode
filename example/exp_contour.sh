@@ -15,4 +15,4 @@ fi
 npoints=100
 
 combine -M MultiDimFit -m 125 output/testModel${year}/model_combined.root --algo contour2d --points=${npoints} --cl=${cl} --cminDefaultMinimizerStrategy 0 --robustFit=1 -t -1 --redefineSignalPOIs rVBF,rggF --setParameters rggF=1,rVBF=1
-mv higgsCombineTest.MultiDimFit.mH125.root limit.2dcontour.0${cl}.root
+mv higgsCombineTest.MultiDimFit.mH125.root limit.2dcontour.${cl}.root
