@@ -24,7 +24,9 @@ cd $CMSSW_BASE/src/
 git clone git@github.com:andrzejnovak/rhalphalib.git
 cd rhalphalib
 git fetch
-git checkout origin/hxxdev
+git checkout origin/newhcc
+pip install --user .
+
 # Need to update some packages against the ones in CMSSW (might need a few more)
 pip install uproot --user --upgrade
 pip install matplotlib --user --upgrade
