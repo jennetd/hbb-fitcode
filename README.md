@@ -29,6 +29,7 @@ git checkout origin/hxxdev
 pip install uproot --user --upgrade
 pip install matplotlib --user --upgrade
 pip install mplhep --user
+pip install --user .
 ```
 
 Install this code:
