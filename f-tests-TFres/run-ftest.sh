@@ -34,16 +34,15 @@ echo $1
 echo $2
 echo $3
 echo $4
-echo $5
 
-eosout=$4
-index=$5
+eosout=$3
+index=$4
 
-python compare.py --pt=$1 --rho=$2 --rho2=$3 --ntoys=50 --index=${index}
+python compare.py --pt=$1 --rho=$2 --ntoys=50 --index=${index}
 
 ls
 
-dirs=`ls | grep pt$1rho$2_rho$3_vs_`
+dirs=`ls | grep pt$1rho$2_vs_`
 for d in $dirs;
 do
     #move output to eos

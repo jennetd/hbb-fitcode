@@ -189,7 +189,12 @@ def ggfvbf_rhalphabet(tmpdir,
                 initial_vals = np.array(json.load(f)['initial_vals'])
             print(initial_vals)
 
-            tf_MCtempl = rl.BernsteinPoly('tf_MCtempl_'+cat, (initial_vals.shape[0]-1,initial_vals.shape[1]-1), ['pt', 'rho'], init_params=initial_vals, limits=(-5, 5))
+            tf_MCtempl = rl.BasisPoly("tf_MCtempl_"+cat+year,
+                                      (initial_vals.shape[0]-1,initial_vals.shape[1]-1),
+                                      ['pt', 'rho'],
+                                      basis='Bernstein',
+                                      init_params=initial_vals,
+                                      limits=(-10, 10), coefficient_transform=None)
             tf_MCtempl_params = qcdeff * tf_MCtempl(ptscaled, rhoscaled)
 
             for ptbin in range(npt[cat]):
@@ -257,7 +262,13 @@ def ggfvbf_rhalphabet(tmpdir,
         tf_MCtempl.parameters = decoVector.correlated_params.reshape(tf_MCtempl.parameters.shape)
         tf_MCtempl_params_final = tf_MCtempl(ptscaled, rhoscaled)
 
-        tf_dataResidual = rl.BernsteinPoly('tf_dataResidual_'+cat, (initial_vals.shape[0]-1,initial_vals.shape[1]-1), ['pt', 'rho'], limits=(-10, 10))
+        tf_dataResidual = rl.BasisPoly("tf_dataResidual_"+year+cat,
+                                       (0,0),
+                                       ['pt', 'rho'],
+                                       basis='Bernstein',
+                                       init_params=np.array([[1]]),
+                                       limits=(-20,20),
+                                       coefficient_transform=None)
         tf_dataResidual_params = tf_dataResidual(ptscaled, rhoscaled)
         tf_params[cat] = qcdeff * tf_MCtempl_params_final * tf_dataResidual_params
 
@@ -339,7 +350,9 @@ if __name__ == '__main__':
 
     year = "2016"
     thisdir = os.getcwd()
-    if "2017" in thisdir: 
+    if "2016APV" in thisdir:
+        year = "2016APV"
+    elif "2017" in thisdir: 
         year = "2017"
     elif "2018" in thisdir:
         year = "2018"

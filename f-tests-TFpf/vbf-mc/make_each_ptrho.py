@@ -6,13 +6,15 @@ if __name__ == '__main__':
 
     year = "2016"
     thisdir = os.getcwd()
-    if "2017" in thisdir:
+    if "2016APV" in thisdir:
+        year = "2016APV"
+    elif "2017" in thisdir:
         year = "2017"
     elif "2018" in thisdir:
         year = "2018"
 
-    for pt in range(0,1):
-        for rho in range(1,3):
+    for pt in range(0,2):
+        for rho in range(0,2):
 
             print("pt = "+str(pt)+", rho = "+str(rho))
 

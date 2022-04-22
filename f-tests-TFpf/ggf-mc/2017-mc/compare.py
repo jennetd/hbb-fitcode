@@ -1,1 +1,1 @@
-../../compare.py
+../compare.py
