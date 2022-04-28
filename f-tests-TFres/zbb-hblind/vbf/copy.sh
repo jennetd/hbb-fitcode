@@ -10,9 +10,7 @@ elif [[ "$PWD" == *"2018"* ]]; then
 fi
 
 tag=`echo $PWD | sed 's:.*/::'`
-echo $tag
-
-cp /eos/uscms/store/user/jennetd/f-tests-pf/ggf-mc/${year}/*/${tag}*/*.root .
+cp /eos/uscms/store/user/jennetd/f-tests-ddb-res/${year}_vbf*/${tag}*/*.root .
 
 rm *total.root
 hadd higgsCombineToys.GenerateOnly.mH125.total.root higgsCombineToys.GenerateOnly.mH125.*.root

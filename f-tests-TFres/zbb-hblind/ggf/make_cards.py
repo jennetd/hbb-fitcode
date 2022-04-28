@@ -39,11 +39,11 @@ def syst_variation(numerator,denominator):
     return var
 
 def smass(sName):
-    if sName in ['ggF','VBF','WH','ZH','ggZH','ttH']:
+    if sName in ['ggF','VBF','WH','ZH','ttH']:
         _mass = 125.
-    elif sName in ['Wjets','ttbar','VV']:
+    elif sName in ['Wjets','EWKW','ttbar','singlet','VV']:
         _mass = 80.379
-    elif 'Zjets' in sName:
+    elif sName in ['Zjets','Zjetsbb','EWKZ','EWKZbb']:
         _mass = 91.
     else:
         raise ValueError("What is {}".format(sName))
@@ -77,7 +77,6 @@ def get_template(sName, passed, ptbin, cat, obs, syst, muon=False):
 
     name += sName+'_'+syst
     print(name)
-
     h = f.Get(name)
 
     sumw = []
@@ -392,7 +391,6 @@ def ggfvbf_rhalphabet(tmpdir,
                                       init_params=initial_vals,
                                       limits=(-10, 10), coefficient_transform=None)
 
-#            tf_MCtempl = rl.BernsteinPoly('tf_MCtempl_'+cat, (initial_vals.shape[0]-1,initial_vals.shape[1]-1), ['pt', 'rho'], init_params=initial_vals, limits=(-20, 20))
             tf_MCtempl_params = qcdeff * tf_MCtempl(ptscaled, rhoscaled)
 
             for ptbin in range(npt[cat]):
@@ -473,7 +471,6 @@ def ggfvbf_rhalphabet(tmpdir,
                                        limits=(-20,20), 
                                        coefficient_transform=None)
 
-#        tf_dataResidual = rl.BernsteinPoly('tf_dataResidual_'+cat, (initial_vals_data.shape[0]-1,initial_vals_data.shape[1]-1), ['pt', 'rho'], init_params=initial_vals_data, limits=(-20, 20))
         tf_dataResidual_params = tf_dataResidual(ptscaled, rhoscaled)
         tf_params[cat] = qcdeff * tf_MCtempl_params_final * tf_dataResidual_params
 
@@ -481,8 +478,8 @@ def ggfvbf_rhalphabet(tmpdir,
     model = rl.Model('testModel_'+year)
 
     # exclude QCD from MC samps
-    samps = ['VBF','ttH','ttbar','Zjets','Zjetsbb','VV']
-    sigs = ['VBF']
+    samps = ['ggF','VBF','WH','ZH','ttH','Wjets','Zjets','Zjetsbb','EWKW','EWKZ','EWKZbb','ttbar','singlet','VV']
+    sigs = ['ggF','VBF']
 
     for cat in cats:
         for ptbin in range(npt[cat]):
@@ -593,8 +590,8 @@ def ggfvbf_rhalphabet(tmpdir,
                                     sample.setParamEffect(sys_smear, _up, _down)
                                     
                             # Muon CR phase space unc on ttbar                                                                                                             
-                            if sName == "ttbar" and cat == "vbf":
-                                sample.setParamEffect(sys_vbf_ttbar_unc,SF[year]["muCR_VBF_ttbar"])
+                            #if sName == "ttbar" and cat == "vbf":
+                            #    sample.setParamEffect(sys_vbf_ttbar_unc,SF[year]["muCR_VBF_ttbar"])
 
                             # Theory systematics #########################################
                             # uncertainties on V+jets                 
@@ -619,7 +616,7 @@ def ggfvbf_rhalphabet(tmpdir,
                                     sample.setParamEffect(sys_dict[sys], eff_up, eff_do)
 
                             # QCD scale and PDF uncertainties on Higgs signal    
-                            elif sName in []:#'ggF','VBF','WH','ZH','ggZH','ttH']:
+                            elif sName in ['ggF','VBF','WH','ZH','ggZH','ttH']:
                             
                                 fsr_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRUp'))[0]
                                 fsr_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRDown'))[0]
@@ -693,7 +690,7 @@ def ggfvbf_rhalphabet(tmpdir,
                                 sf,sfunc_up,sfunc_down = passfailSF(isPass, sName, binindex, cat+'_', msd, mask, 1, SF[year]['BB_SF_UP'], SF[year]['BB_SF_DOWN'])
                                 sample.scale(sf)
                                 sample.setParamEffect(sys_ddxeffbb, sfunc_up, sfunc_down)
-                                if cat == 'ggf':                                                                                              
+                                if cat == 'ggf':                                                                               
                                     sample.setParamEffect(sys_ddb_pt[ptbin],1.15)  
 
                             # N2DDT SF (V SF)                                                     
@@ -770,7 +767,7 @@ def ggfvbf_rhalphabet(tmpdir,
     # Fill in muon CR
     if do_muon_CR:
         templates = {}
-        samps = ['ttbar','QCD','singlet','Zjets','Wjets','VV']
+        samps = ['QCD','Wjets','Zjets','Zjetsbb','EWKW','EWKZ','EWKZbb','ttbar','singlet','VV']
         for region in ['pass', 'fail']:
             ch = rl.Channel('muonCR%s%s' % (region, year))
             model.addChannel(ch)

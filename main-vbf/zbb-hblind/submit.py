@@ -9,11 +9,7 @@ def main():
     year = "prefit"
     yearstr = ""
     thisdir = os.getcwd()
-
-    if "2016APV" in thisdir:
-        year = "2016APV-prefit"
-        yearstr = "_2016APV"
-    elif "2016" in thisdir:
+    if "2016" in thisdir:
         year = "2016-prefit"
         yearstr = "_2016"
     elif "2017" in thisdir:
@@ -33,13 +29,11 @@ def main():
     outdir = '/store/user/jennetd/fits/'+year+'/'
     os.system('mkdir -p /eos/uscms'+outdir)
 
-    for tag in ['exp_shapes','exp_significance','exp_mu_zbb','exp_mu_vbf','exp_mu_ggf','exp_contour68','exp_contour95']:
+    for tag in ['obs_shapes','obs_mu_zbb','fit_batch']:
         
         print('Submitting '+tag)
 
         condorfilename = "fit.templ.condor"
-        if "npimpacts" in tag:
-            condorfilename = "parallelfit.templ.condor"
 
         condor_templ_file = open(condorfilename)
         localcondor = locdir+'/'+tag+".condor"

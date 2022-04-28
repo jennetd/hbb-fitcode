@@ -15,6 +15,9 @@ void draw_PFratio_QCDMC(){
 
   string year = "2016";
 
+  if(thisdir.find("2016APV") != std::string::npos){
+    year = "2016APV";
+  }
   if(thisdir.find("2017") != std::string::npos){
     year = "2017";
   }

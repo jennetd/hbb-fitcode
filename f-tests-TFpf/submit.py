@@ -8,7 +8,9 @@ def main():
 
     year = "2016"
     thisdir = os.getcwd()
-    if "2017" in thisdir:
+    if "2016APV" in thisdir:
+        year = "2016APV"
+    elif "2017" in thisdir:
         year = "2017"
     elif "2018" in thisdir:
         year = "2018"
@@ -30,10 +32,10 @@ def main():
     loc_base = os.environ['PWD']
     logdir = 'logs'
 
-    tag = cat+"_"+year+"_pt" + str(pt) + "rho" + str(rho)
+    tag = "pt" + str(pt) + "rho" + str(rho)
     script = 'run-ftest.sh'
 
-    homedir = '/store/user/jennetd/f-tests/'
+    homedir = '/store/user/jennetd/f-tests-pf/'+cat+'/'+year+'/'
     outdir = homedir + tag 
 
     # make local directory
@@ -50,11 +52,6 @@ def main():
         condor_templ_file = open("submit.templ.condor")
 
         transferfiles = "compare.py,pt" + str(pt) + "rho" + str(rho) + ",pt" + str(pt+1) + "rho" + str(rho) + ",pt" + str(pt) + "rho" +  str(rho+1)
-        if pt > rho:
-            transferfiles = "compare.py,pt" + str(pt) + "rho" + str(rho) + ",pt" + str(pt) + "rho" +  str(rho+1)
-        if rho > pt:
-            transferfiles = "compare.py,pt" + str(pt) + "rho" + str(rho) + ",pt" + str(pt+1) + "rho" + str(rho)
-
         if "vbf" in cat:
             transferfiles = "compare.py,pt" + str(pt) + "rho" + str(rho) + ",pt" + str(pt) + "rho" +  str(rho+1)
 

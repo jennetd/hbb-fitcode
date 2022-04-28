@@ -2,9 +2,7 @@ python make_cards.py
 
 year=""
 
-if [[ "$PWD" == *"2016APV"* ]]; then
-    year="_2016APV"
-elif [[ "$PWD" == *"2016"* ]]; then
+if [[ "$PWD" == *"2016"* ]]; then
     year="_2016"
 elif [[ "$PWD" == *"2017"* ]]; then
 year="_2017"

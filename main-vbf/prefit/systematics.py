@@ -27,38 +27,6 @@ def syst_variation(numerator,denominator):
 
     return var
 
-def get_template_year(y, sName, passed, ptbin, cat, obs, syst, muon=False):
-    """                                                                                                                                   
-    Read msd template from root file for year y                                                                    
-    """
-
-    f = ROOT.TFile.Open(y+'-signalregion.root')
-    if muon:
-        f = ROOT.TFile.Open(y+'-muonCR.root')
-
-    name = cat+'fail_'
-    if passed:
-        name = cat+'pass_'
-    if cat == 'ggf_':
-        name += 'pt'+str(ptbin)+'_'
-    if cat == 'vbf_':
-        name += 'mjj'+str(ptbin)+'_'
-
-    name += sName+'_'+syst
-
-    h = f.Get(name)
-#    if muon:
-#        h.Rebin(h.GetNbinsX())
-
-    sumw = []
-    sumw2 = []
-
-    for i in range(1,h.GetNbinsX()+1):
-        sumw += [h.GetBinContent(i)]
-        sumw2 += [h.GetBinError(i)*h.GetBinError(i)]
-
-    return (np.array(sumw), obs.binning, obs.name, np.array(sumw2))
-
 def get_template(sName, passed, ptbin, cat, obs, syst, muon=False):
     """
     Read msd template from root file
@@ -77,6 +45,7 @@ def get_template(sName, passed, ptbin, cat, obs, syst, muon=False):
         name += 'mjj'+str(ptbin)+'_'
 
     name += sName+'_'+syst
+    print(name)
 
     h = f.Get(name)
 
@@ -132,11 +101,39 @@ def systematics(year):
 
     # Systematics 
 
-    # experimental systematics are uncorrelated across years
-    exp_systs = ['JES','JER','UES','jet_trigger','pileup_weight','btagWeight']
-    if year == "2016" or year == "2017":
+    # experimental systematics are mostly uncorrelated across years                                                                                     
+    yearstr = year
+    if '2016' in year:
+        if 'APV' in year:
+            yearstr = '2016preVFP'
+        else:
+            yearstr = '2016postVFP'
+
+    sys_dict['muon_ID_'+yearstr+'_value'] = rl.NuisanceParameter('CMS_mu_id_{}'.format(year), 'lnN')
+    sys_dict['muon_ISO_'+yearstr+'_value'] = rl.NuisanceParameter('CMS_mu_iso_{}'.format(year), 'lnN')
+    sys_dict['muon_TRIGNOISO_'+yearstr+'_value'] = rl.NuisanceParameter('CMS_hbb_mu_trigger_{}'.format(year), 'lnN')
+
+    sys_dict['JES'] = rl.NuisanceParameter('CMS_scale_j_{}'.format(year), 'lnN')
+    sys_dict['JER'] = rl.NuisanceParameter('CMS_res_j_{}'.format(year), 'lnN')
+    sys_dict['UES'] = rl.NuisanceParameter('CMS_ues_j_{}'.format(year), 'lnN')
+    sys_dict['jet_trigger'] = rl.NuisanceParameter('CMS_hbb_jet_trigger_{}'.format(year), 'lnN')
+    sys_dict['pileup_weight'] = rl.NuisanceParameter('CMS_hbb_PU_{}'.format(year), 'lnN')
+
+    sys_dict['btagSFlight_'+year] = rl.NuisanceParameter('CMS_hbb_btagSFlight_{}'.format(year), 'lnN')
+    sys_dict['btagSFbc_'+year] = rl.NuisanceParameter('CMS_hbb_btagSFbc_{}'.format(year), 'lnN')
+    sys_dict['btagSFlight_correlated'] = rl.NuisanceParameter('CMS_hbb_btagSFlight_correlated'.format(year), 'lnN')
+    sys_dict['btagSFbc_correlated'] = rl.NuisanceParameter('CMS_hbb_btagSFbc_correlated', 'lnN')
+
+    sys_dict['L1Prefiring'] = rl.NuisanceParameter('CMS_L1Prefiring_{}'.format(year),'lnN')
+
+    exp_systs = ['jet_trigger','pileup_weight',
+                 'JES','JER','UES',
+                 'btagSFlight_'+year,'btagSFbc_'+year,
+                 'btagSFlight_correlated','btagSFbc_correlated']
+
+    if '2018' not in year:
         exp_systs += ['L1Prefiring']
-    mu_exp_systs = exp_systs + ['mu_isoweight','mu_idweight','mu_trigger']
+    mu_exp_systs = exp_systs + ['muon_ID_'+yearstr+'_value','muon_ISO_'+yearstr+'_value','muon_TRIGNOISO_'+yearstr+'_value']
 
     Zjets_thsysts = ['d1kappa_EW', 'Z_d2kappa_EW', 'Z_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']
     Wjets_thsysts = ['d1kappa_EW', 'W_d2kappa_EW', 'W_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']         
@@ -225,8 +222,12 @@ def systematics(year):
                             eff_up = shape_to_num(syst_up,nominal)
                             eff_do = shape_to_num(syst_do,nominal)
 
-                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,1,eff_up-1]],columns=cols))
-                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,0,eff_do-1]],columns=cols))
+                            if "btagSFlight_201" in sys or "btagSFbc_201" in sys:
+                                df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys.split('_')[0],1,eff_up-1]],columns=cols))
+                                df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys.split('_')[0],0,eff_do-1]],columns=cols))
+                            else:
+                                df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,1,eff_up-1]],columns=cols))
+                                df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,sys,0,eff_do-1]],columns=cols))
 
                         # Theory systematics #########################################
                         # uncertainties on V+jets                 
@@ -255,18 +256,16 @@ def systematics(year):
                             # QCD scale and PDF uncertainties on Higgs signal    
                         elif sName in ['ggF','VBF','WH','ZH','ggZH','ttH']:
                             
-                            nominal18 = smorph(get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='nominal'))[0]
-  
-                            fsr18_up = smorph(get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRUp'))[0]
-                            fsr18_do = smorph(get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRDown'))[0]
-                            eff_fsr18_up = np.sum(fsr18_up)/np.sum(nominal18)
-                            eff_fsr18_do = np.sum(fsr18_do)/np.sum(nominal18)
+                            fsr_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRUp'))[0]
+                            fsr_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRDown'))[0]
+                            eff_fsr_up = np.sum(fsr_up)/np.sum(nominal)
+                            eff_fsr_do = np.sum(fsr_do)/np.sum(nominal)
 
-                            isr18_up = smorph(get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_ISRUp'))[0]
-                            isr18_do = smorph(get_template_year('2018', sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_ISRDown'))[0]
-                            eff_isr18_up = np.sum(isr18_up)/np.sum(nominal18)
-                            eff_isr18_do = np.sum(isr18_do)/np.sum(nominal18)
-                            
+                            isr_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_ISRUp'))[0]
+                            isr_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_ISRDown'))[0]
+                            eff_isr_up = np.sum(isr_up)/np.sum(nominal)
+                            eff_isr_do = np.sum(isr_do)/np.sum(nominal)
+
                             pdf_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='PDF_weightUp'))[0]
                             pdf_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='PDF_weightDown'))[0]
                             eff_pdf_up = np.sum(pdf_up)/np.sum(nominal)
@@ -305,13 +304,13 @@ def systematics(year):
                                     
                             df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'scale',1,eff_scale_up-1]],columns=cols))
                             df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'PDF',1,eff_pdf_up-1]],columns=cols))
-                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'FSR',1,eff_fsr18_up-1]],columns=cols))
-                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'ISR',1,eff_isr18_up-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'FSR',1,eff_fsr_up-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'ISR',1,eff_isr_up-1]],columns=cols))
                             
                             df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'scale',0,eff_scale_do-1]],columns=cols))
                             df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'PDF',0,eff_pdf_do-1]],columns=cols))
-                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'FSR',0,eff_fsr18_do-1]],columns=cols))
-                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'ISR',0,eff_isr18_do-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'FSR',0,eff_fsr_do-1]],columns=cols))
+                            df = df.append(pd.DataFrame([[cat+' '+str(binindex+1),region,sName,'ISR',0,eff_isr_do-1]],columns=cols))
                         
                         # Add SFs last!
                         # DDB SF 
@@ -332,6 +331,8 @@ if __name__ == '__main__':
 
     year = "2016"
     thisdir = os.getcwd()
+    if "2016APV" in thisdir:
+        year = "2016APV"
     if "2017" in thisdir: 
         year = "2017"
     elif "2018" in thisdir:

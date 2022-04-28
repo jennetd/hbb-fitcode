@@ -8,7 +8,9 @@ def main():
 
     year = "2016"
     thisdir = os.getcwd()
-    if "2017" in thisdir:
+    if "2016APV" in thisdir:
+        year = "2016APV"
+    elif "2017" in thisdir:
         year = "2017"
     elif "2018" in thisdir:
         year = "2018"

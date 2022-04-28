@@ -496,7 +496,7 @@ def ggfvbf_rhalphabet(tmpdir,
                     mask = validbins[cat][ptbin]
                     failCh.mask = mask
                     # blind bins 9-13                                                                                              
-#                    mask[9:14] = False    
+                    mask[9:14] = False    
                     passCh.mask = mask
 
                     ch = rl.Channel('ptbin%dmjjbin%d%s%s%s' % (ptbin, mjjbin, cat, region, year))

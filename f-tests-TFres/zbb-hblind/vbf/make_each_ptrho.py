@@ -6,7 +6,7 @@ if __name__ == '__main__':
 
     year = "2016"
     thisdir = os.getcwd()
-    if "2016" in thisdir:
+    if "2016APV" in thisdir:
         year = "2016APV"
     elif "2017" in thisdir:
         year = "2017"
@@ -24,13 +24,12 @@ if __name__ == '__main__':
 
             # Link what you need
             os.system("mkdir plots")
-            os.system("ln -s ../../../../../main-vbf/zbb-hblind/2018-ddb/2018-signalregion.root .")
-            os.system("ln -s ../../../../../main-vbf/zbb-hblind/"+year+"-ddb/signalregion.root .")
-            os.system("ln -s ../../../../../main-vbf/zbb-hblind/"+year+"-ddb/muonCR.root .")
-            os.system("cp ../../../../../main-vbf/zbb-hblind/"+year+"-ddb/initial_vals_ggf.json .")
-            os.system("cp ../../../../../main-vbf/zbb-hblind/"+year+"-ddb/initial_vals_vbf.json .")
+            os.system("ln -s ../../../../../main-vbf/zbb-hblind/"+year+"-zbb/signalregion.root .")
+            os.system("ln -s ../../../../../main-vbf/zbb-hblind/"+year+"-zbb/muonCR.root .")
+            os.system("cp ../../../../../main-vbf/zbb-hblind/"+year+"-zbb/initial_vals_ggf.json .")
+            os.system("cp ../../../../../main-vbf/zbb-hblind/"+year+"-zbb/initial_vals_vbf.json .")
             os.system("ln -s ../../../../../main-vbf/lumi.json .")
-            os.system("ln -s ../../../../../main-vbf/prefit/2016-ddb/sf.json .")
+            os.system("ln -s ../../../../../main-vbf/sf.json .")
             os.system("ln -s ../../make_cards.py .")
             os.system("ln -s ../../make_workspace.sh .")
 
@@ -49,7 +48,7 @@ if __name__ == '__main__':
                 initial_vals = (np.full((pt+1,rho+1),1)).tolist()
                 thedict = {}
                 thedict["initial_vals"] = initial_vals
-                    
+
                 with open("initial_vals_data_vbf.json", "w") as outfile:
                     json.dump(thedict,outfile)
 
