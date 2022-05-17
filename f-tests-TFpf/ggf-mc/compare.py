@@ -15,7 +15,7 @@ def GoF(infile, ntoys, seed=123456):
 
     combine_cmd = "combineTool.py -M GoodnessOfFit -m 125 -d " + infile + ".root \
     --snapshotName MultiDimFit --bypassFrequentistFit \--setParameters r=0 --freezeParameters r \
-    -n \"Toys." + infile + "\" -t " + str(ntoys) + " --algo \"AD\" --toysFile higgsCombineToys.GenerateOnly.mH125."+str(seed)+".root \
+    -n \"Toys." + infile + "\" -t " + str(ntoys) + " --algo \"saturated\" --toysFile higgsCombineToys.GenerateOnly.mH125."+str(seed)+".root \
     --cminDefaultMinimizerStrategy 0 \
     --seed "+str(seed)
     os.system(combine_cmd)
