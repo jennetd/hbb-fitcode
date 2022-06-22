@@ -1,3 +1,37 @@
+TH2D* get_th2(string dir){
+
+  TFile *f = new TFile((dir+"/limit.grid2d.root").c_str());
+
+  // Variables                                                                                                                          
+  float rVBF = 0;
+  float rggF = 0;
+  float deltaNLL = 0;
+
+  TTree* t = (TTree*)f->Get("limit");
+  t->SetBranchAddress("rVBF",&rVBF);
+  t->SetBranchAddress("rggF",&rggF);
+  t->SetBranchAddress("deltaNLL",&deltaNLL);
+
+  const int npoints = 32;
+
+  double mumin = -6;
+  double mumax = 7;
+
+  TH2D* h = new TH2D("deltaNLL","deltaNLL",npoints,mumin,mumax,npoints,mumin,mumax);
+
+  cout << t->GetEntries() << endl;
+
+  for(int i=0; i<t->GetEntries(); i++){
+
+    t->GetEntry(i);
+    cout << rggF << ", " << rVBF << ", " << deltaNLL << endl;
+    h->Fill(rggF,rVBF,deltaNLL);
+
+  }
+
+  return h;
+}
+
 // Draw output of combine 2d contour
 TGraph* get_contour(string dir, string cl){
 
@@ -12,8 +46,8 @@ TGraph* get_contour(string dir, string cl){
   t->SetBranchAddress("rVBF",&rVBF);
   t->SetBranchAddress("rggF",&rggF);
   t->SetBranchAddress("quantileExpected",&quantileExpected);
-  int npoints = t->GetEntries()-5;
 
+  int npoints = t->GetEntries()-4;
   double rVBF_lim[npoints];
   double rggF_lim[npoints];
 
@@ -71,6 +105,9 @@ void draw_contour(){
   gStyle->SetOptTitle(0);
 
   TCanvas* c1 = new TCanvas();
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  gPad->SetRightMargin(0.15);
 
   double x[1], y[1];
   x[0] = 1; y[0] = 1;
@@ -79,21 +116,27 @@ void draw_contour(){
   TGraph* g68 = get_contour(".","068");
   TGraph* g95 = get_contour(".","095");
 
+  TH2D* h = get_th2(".");
+
   float textsize1 = 18/(gPad->GetWh()*gPad->GetAbsHNDC());
 
+  h->GetXaxis()->SetLabelSize(textsize1);                                                                                                                             
+  h->GetXaxis()->SetTitleSize(textsize1);                                                                                                                             
+  h->GetYaxis()->SetLabelSize(textsize1);                                                                                                                             
+  h->GetYaxis()->SetTitleSize(textsize1);  
+  h->GetXaxis()->SetTitle("#mu_{ggF}");                                                                                                                               
+  h->GetYaxis()->SetTitle("#mu_{VBF}");  
+  h->GetZaxis()->SetTitle("#Delta NLL");
+  h->GetYaxis()->SetRangeUser(-6,7);
+  h->GetXaxis()->SetRangeUser(-6,7);
+  h->Draw("COLZ");
+
+  g95->SetLineColor(kWhite);
   g95->SetLineWidth(3);
   g95->SetLineStyle(2);
-  g95->GetXaxis()->SetLabelSize(textsize1);
-  g95->GetXaxis()->SetTitleSize(textsize1);
-  g95->GetYaxis()->SetLabelSize(textsize1);
-  g95->GetYaxis()->SetTitleSize(textsize1);
-  g95->GetHistogram()->SetMaximum(6);
-  //g95->GetYaxis()->SetLimits(-10,10);
-  g95->Draw("AC");
+  g95->Draw("same");
 
-  g95->GetXaxis()->SetTitle("#mu_{ggF}");
-  g95->GetYaxis()->SetTitle("#mu_{VBF}");
-
+  g68->SetLineColor(kWhite);
   g68->SetLineWidth(3);
   g68->Draw("same");
 
@@ -102,7 +145,8 @@ void draw_contour(){
   best->SetMarkerColor(kRed);
   best->Draw("p");
 
-  TLegend* leg = new TLegend(.6,.7,.89,.85);
+  TLegend* leg = new TLegend(.15,.2,.44,.35);
+  leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->AddEntry(best,"SM","p");
   leg->AddEntry(g68,(asimov+" 68% CL").c_str(),"l");
