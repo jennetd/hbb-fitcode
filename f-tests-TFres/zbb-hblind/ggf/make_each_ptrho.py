@@ -13,8 +13,8 @@ if __name__ == '__main__':
     elif "2018" in thisdir:
         year = "2018"
 
-    for pt in range(1,3):
-        for rho in range(3,4):
+    for pt in range(0,3):
+        for rho in range(0,4):
             print("pt = "+str(pt)+", rho = "+str(rho))
             # Make the directory and go there
             thedir = "pt"+str(pt)+"rho"+str(rho)

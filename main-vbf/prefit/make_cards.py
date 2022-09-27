@@ -78,6 +78,7 @@ def get_template(sName, passed, ptbin, cat, obs, syst, muon=False):
     name += sName+'_'+syst
 
     h = f.Get(name)
+    print(name)
 
     sumw = []
     sumw2 = []
@@ -206,7 +207,7 @@ def ggfvbf_rhalphabet(tmpdir,
 
     # Systematics
     sys_lumi_uncor = rl.NuisanceParameter('CMS_lumi_13TeV_{}'.format(year[:4]), 'lnN')
-    sys_lumi_cor_161718 = rl.NuisanceParameter('CMS_lumi_13TeV_correlated_', 'lnN')
+    sys_lumi_cor_161718 = rl.NuisanceParameter('CMS_lumi_13TeV_correlated', 'lnN')
     sys_lumi_cor_1718 = rl.NuisanceParameter('CMS_lumi_13TeV_correlated_20172018', 'lnN')
 
     sys_eleveto = rl.NuisanceParameter('CMS_hbb_e_veto_{}'.format(year), 'lnN')                                    
@@ -280,7 +281,7 @@ def ggfvbf_rhalphabet(tmpdir,
     for sys in ['d1kappa_EW', 'Z_d2kappa_EW', 'Z_d3kappa_EW', 'W_d2kappa_EW', 'W_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']:
         sys_dict[sys] = rl.NuisanceParameter('CMS_hbb_{}'.format(sys), 'lnN')
             
-    Zjets_thsysts = ['d1kappa_EW', 'Z_d2kappa_EW', 'Z_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']
+    Zjets_thsysts = ['d1kappa_EW', 'Z_d2kappa_EW', 'Z_d3kappa_EW', 'd1K_NLO', 'd2K_NLO']
     Wjets_thsysts = ['d1kappa_EW', 'W_d2kappa_EW', 'W_d3kappa_EW', 'd1K_NLO', 'd2K_NLO', 'd3K_NLO']         
                       
     pdf_Higgs_ggF = rl.NuisanceParameter('pdf_Higgs_ggF','lnN')
@@ -551,11 +552,12 @@ def ggfvbf_rhalphabet(tmpdir,
                             
                             sample.setParamEffect(sys_eleveto, 1.005)
                             sample.setParamEffect(sys_muveto, 1.005)
-                            sample.setParamEffect(sys_tauveto, 1.005)
+                            sample.setParamEffect(sys_tauveto, 1.05)
 
                             for sys in exp_systs:
-                                syst_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up'))[0]
-                                syst_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down'))[0]
+
+                                syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up')[0]
+                                syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down')[0]
 
                                 eff_up = shape_to_num(syst_up,nominal)
                                 eff_do = shape_to_num(syst_do,nominal)
@@ -590,15 +592,15 @@ def ggfvbf_rhalphabet(tmpdir,
                                     sample.setParamEffect(sys_smear, _up, _down)
                                     
                             # Muon CR phase space unc on ttbar                                                                                                             
-                            #if sName == "ttbar" and cat == "vbf":
-                            #    sample.setParamEffect(sys_vbf_ttbar_unc,SF[year]["muCR_VBF_ttbar"])
+                            if sName == "ttbar" and cat == "vbf":
+                                sample.setParamEffect(sys_vbf_ttbar_unc,SF[year]["muCR_VBF_ttbar"])
 
                             # Theory systematics #########################################
                             # uncertainties on V+jets                 
                             if sName in ['Wjets']:
                                 for sys in Wjets_thsysts:
-                                    syst_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up'))[0]
-                                    syst_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down'))[0]
+                                    syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up')[0]
+                                    syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down')[0]
                                     
                                     eff_up = shape_to_num(syst_up,nominal)
                                     eff_do = shape_to_num(syst_do,nominal)
@@ -607,8 +609,8 @@ def ggfvbf_rhalphabet(tmpdir,
 
                             elif sName in ['Zjets','Zjetsbb']:
                                 for sys in Zjets_thsysts:
-                                    syst_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up'))[0]
-                                    syst_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down'))[0]
+                                    syst_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Up')[0]
+                                    syst_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst=sys+'Down')[0]
                                     
                                     eff_up = shape_to_num(syst_up,nominal)
                                     eff_do = shape_to_num(syst_do,nominal)
@@ -618,24 +620,24 @@ def ggfvbf_rhalphabet(tmpdir,
                             # QCD scale and PDF uncertainties on Higgs signal    
                             elif sName in ['ggF','VBF','WH','ZH','ggZH','ttH']:
                             
-                                fsr_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRUp'))[0]
-                                fsr_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRDown'))[0]
+                                fsr_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRUp')[0]
+                                fsr_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_FSRDown')[0]
                                 eff_fsr_up = np.sum(fsr_up)/np.sum(nominal)
                                 eff_fsr_do = np.sum(fsr_do)/np.sum(nominal)
 
-                                isr_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_ISRUp'))[0]
-                                isr_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_ISRDown'))[0]
+                                isr_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_ISRUp')[0]
+                                isr_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='UEPS_ISRDown')[0]
                                 eff_isr_up = np.sum(isr_up)/np.sum(nominal)
                                 eff_isr_do = np.sum(isr_do)/np.sum(nominal)
 
-                                pdf_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='PDF_weightUp'))[0]
-                                pdf_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='PDF_weightDown'))[0]
+                                pdf_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='PDF_weightUp')[0]
+                                pdf_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='PDF_weightDown')[0]
                                 eff_pdf_up = np.sum(pdf_up)/np.sum(nominal)
                                 eff_pdf_do = np.sum(pdf_do)/np.sum(nominal)
                             
                                 if sName == 'ggF':
-                                    scale_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptUp'))[0]
-                                    scale_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptDown'))[0]
+                                    scale_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptUp')[0]
+                                    scale_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptDown')[0]
                                 
                                     eff_scale_up = np.sum(scale_up)/np.sum(nominal)
                                     eff_scale_do = np.sum(scale_do)/np.sum(nominal)
@@ -646,8 +648,8 @@ def ggfvbf_rhalphabet(tmpdir,
                                     sample.setParamEffect(isr_ggF,eff_isr_up,eff_isr_do)
 
                                 elif sName == 'VBF':
-                                    scale_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptUp'))[0]
-                                    scale_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptDown'))[0]
+                                    scale_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptUp')[0]
+                                    scale_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptDown')[0]
 
                                     eff_scale_up = np.sum(scale_up)/np.sum(nominal)
                                     eff_scale_do = np.sum(scale_do)/np.sum(nominal)
@@ -658,8 +660,8 @@ def ggfvbf_rhalphabet(tmpdir,
                                     sample.setParamEffect(isr_VBF,eff_isr_up,eff_isr_do)
                                     
                                 elif sName in ['WH','ZH','ggZH']:
-                                    scale_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptUp'))[0]
-                                    scale_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptDown'))[0]
+                                    scale_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptUp')[0]
+                                    scale_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_3ptDown')[0]
 
                                     eff_scale_up = np.sum(scale_up)/np.sum(nominal)
                                     eff_scale_do = np.sum(scale_do)/np.sum(nominal)
@@ -673,8 +675,8 @@ def ggfvbf_rhalphabet(tmpdir,
                                     sample.setParamEffect(isr_VH,eff_isr_up,eff_isr_do)
 
                                 elif sName == 'ttH':
-                                    scale_up = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptUp'))[0]
-                                    scale_do = smorph(get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptDown'))[0]
+                                    scale_up = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptUp')[0]
+                                    scale_do = get_template(sName, isPass, binindex+1, cat+'_', obs=msd, syst='scalevar_7ptDown')[0]
 
                                     eff_scale_up = np.sum(scale_up)/np.sum(nominal)
                                     eff_scale_do = np.sum(scale_do)/np.sum(nominal)
@@ -686,7 +688,7 @@ def ggfvbf_rhalphabet(tmpdir,
 
                             # Add SFs last!
                             # DDB SF 
-                            if sName in ['ggF','VBF','WH','ZH','ggZH','ttH','Zjetsbb']:
+                            if sName in ['ggF','VBF','WH','ZH','ggZH','ttH','Zjetsbb','EWKZbb']:
                                 sf,sfunc_up,sfunc_down = passfailSF(isPass, sName, binindex, cat+'_', msd, mask, 1, SF[year]['BB_SF_UP'], SF[year]['BB_SF_DOWN'])
                                 sample.scale(sf)
                                 sample.setParamEffect(sys_ddxeffbb, sfunc_up, sfunc_down)
@@ -796,7 +798,9 @@ def ggfvbf_rhalphabet(tmpdir,
                     sample.autoMCStats(lnN=True)
 
                     sample.setParamEffect(sys_eleveto, 1.005)
-                    sample.setParamEffect(sys_tauveto, 1.005)
+                    sample.setParamEffect(sys_tauveto, 1.05)
+
+                    print(sName)
 
                     # End of systematics applied to QCD
                     if sName == 'QCD':
@@ -813,7 +817,7 @@ def ggfvbf_rhalphabet(tmpdir,
                         sample.setParamEffect(sys_dict[sys], eff_up, eff_do)
 
                     # DDB SF                                                                                  
-                    if sName in ['ggF','VBF','WH','ZH','ggZH','ttH','Zjetsbb']:
+                    if sName in ['ggF','VBF','WH','ZH','ggZH','ttH','Zjetsbb','EWKZbb']:
                         sf,sfunc_up,sfunc_down = passfailSF(isPass, sName, -1, '', msd, mask, 1, SF[year]['BB_SF_UP'], SF[year]['BB_SF_DOWN'], muon = True)
                         sample.scale(sf)
                         sample.setParamEffect(sys_ddxeffbb, sfunc_up, sfunc_down)
@@ -834,22 +838,26 @@ def ggfvbf_rhalphabet(tmpdir,
 
         tqqpass = model['muonCRpass'+year+'_ttbar']
         tqqfail = model['muonCRfail'+year+'_ttbar']
-        stqqpass = model['muonCRpass'+year+'_singlet']
-        stqqfail = model['muonCRfail'+year+'_singlet']
         sumPass = tqqpass.getExpectation(nominal=True).sum()
         sumFail = tqqfail.getExpectation(nominal=True).sum()
+
+        stqqpass = model['muonCRpass'+year+'_singlet']
+        stqqfail = model['muonCRfail'+year+'_singlet']
         sumPass += stqqpass.getExpectation(nominal=True).sum()
         sumFail += stqqfail.getExpectation(nominal=True).sum()
-        tqqPF = sumPass / sumFail
-        tqqpass.setParamEffect(tqqeffSF, 1 * tqqeffSF)
-        tqqfail.setParamEffect(tqqeffSF, (1 - tqqeffSF) * tqqPF + 1)
-        tqqpass.setParamEffect(tqqnormSF, 1 * tqqnormSF)
-        tqqfail.setParamEffect(tqqnormSF, 1 * tqqnormSF)
+
+        tqqPF =  sumPass / sumFail
+
         stqqpass.setParamEffect(tqqeffSF, 1 * tqqeffSF)
         stqqfail.setParamEffect(tqqeffSF, (1 - tqqeffSF) * tqqPF + 1)
         stqqpass.setParamEffect(tqqnormSF, 1 * tqqnormSF)
         stqqfail.setParamEffect(tqqnormSF, 1 * tqqnormSF)
         
+        tqqpass.setParamEffect(tqqeffSF, 1 * tqqeffSF)
+        tqqfail.setParamEffect(tqqeffSF, (1 - tqqeffSF) * tqqPF + 1)
+        tqqpass.setParamEffect(tqqnormSF, 1 * tqqnormSF)
+        tqqfail.setParamEffect(tqqnormSF, 1 * tqqnormSF)
+
         # END if do_muon_CR  
 
     with open(os.path.join(str(tmpdir), 'testModel_'+year+'.pkl'), 'wb') as fout:

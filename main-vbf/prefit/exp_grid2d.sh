@@ -28,7 +28,7 @@ cd ../..
 # Arguments                                                                                                                      
 year=$1
 
-combine -M MultiDimFit -m 125 output/testModel${year}/model_combined.root --algo grid --points=1024 --cminDefaultMinimizerStrategy 0 --robustFit=1 -t -1 --redefineSignalPOIs rVBF,rggF --setParameters rVBF=1,rggF=1
+combine -M MultiDimFit -m 125 output/testModel${year}/model_combined.root --algo grid --points=2500 --cminDefaultMinimizerStrategy 0 --robustFit=1 -t -1 --redefineSignalPOIs rVBF,rggF --setParameters rVBF=1,rggF=1
 
 mv higgsCombineTest.MultiDimFit.mH125.root limit.grid2d.root
 xrdcp -f limit.grid2d.root root://cmseos.fnal.gov/EOSDIR

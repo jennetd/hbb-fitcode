@@ -6,13 +6,15 @@ if __name__ == '__main__':
 
     year = "2016"
     thisdir = os.getcwd()
-    if "2017" in thisdir:
+    if "2016APV" in thisdir:
+        year = "2016APV"
+    elif "2017" in thisdir:
         year = "2017"
     elif "2018" in thisdir:
         year = "2018"
 
-    for pt in range(1,3):
-        for rho in range(1,3):
+    for pt in range(0,3):
+        for rho in range(3,4):
 
             print("pt = "+str(pt)+", rho = "+str(rho))
 
@@ -23,7 +25,7 @@ if __name__ == '__main__':
             os.chdir(thedir)
 
             # Link what you need
-            os.system("ln -s ../../../../main-vbf/prefit/"+year+"-prefit/signalregion.root .")
+            os.system("ln -s ../../../../main-vbf/prefit30-qcd/"+year+"-prefit/signalregion.root .")
             os.system("ln -s ../../make_cards_qcd.py .")
 
             # Create your json files of initial values

@@ -15,6 +15,8 @@ fi
 modelfile=output/testModel${year}/model_combined.root
 
 # Do initial fit
-combineTool.py -M Impacts -d $modelfile -m 125 --robustFit 1 --doInitialFit --setParameters rZbb=1,rVBF=1,rggF=1 --cminDefaultMinimizerStrategy 0 -t -1
+combineTool.py -M Impacts -d $modelfile -m 125 --robustFit 1 --doInitialFit --setParameters rZbb=1 --cminDefaultMinimizerStrat\
+egy 0
 
-combineTool.py -M Impacts -d $modelfile -m 125 --robustFit 1 --doFits --setParameters rZbb=1,rVBF=1,rggF=1 --job-mode condor --sub-opts='+JobFlavour="nextweek"' --exclude 'rgx{qcdparams*}' --cminDefaultMinimizerStrategy 0 -t -1
+combineTool.py -M Impacts -d $modelfile -m 125 --robustFit 1 --doFits --setParameters rZbb=1 --job-mode condor --sub-opts='+JobFlavour="nextweek"' --exclude 'rgx{qcdparams*}' --cminDefaultMinimizerStrat\
+egy 0

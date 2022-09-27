@@ -14,7 +14,7 @@ from rhalphalib import AffineMorphTemplate, MorphHistW2
 rl.util.install_roofit_helpers()
 rl.ParametericSample.PreferRooParametricHist = False
 
-eps=0.0000001
+eps=0.001
 do_systematics = True
 do_muon_CR = True
 
@@ -78,18 +78,22 @@ def get_template(sName, passed, ptbin, cat, obs, syst, muon=False):
     name += sName+'_'+syst
 
     h = f.Get(name)
-    print(name)
 
     sumw = []
     sumw2 = []
 
     for i in range(1,h.GetNbinsX()+1):
+
         sumw += [h.GetBinContent(i)]
         sumw2 += [h.GetBinError(i)*h.GetBinError(i)]
 
+    if name == "ggf_pass_pt5_singlet_nominal":
+        sumw[19] = 0
+        sumw2[19] = 0
+
     return (np.array(sumw), obs.binning, obs.name, np.array(sumw2))
 
-def shape_to_num(var, nom, clip=2):
+def shape_to_num(var, nom, clip=1.5):
     nom_rate = np.sum(nom)
     var_rate = np.sum(var)
 
@@ -243,7 +247,7 @@ def ggfvbf_rhalphabet(tmpdir,
 
     sys_dict['L1Prefiring'] = rl.NuisanceParameter('CMS_L1Prefiring_{}'.format(year),'lnN')
 
-    exp_systs = ['jet_trigger','pileup_weight',
+    exp_systs = ['pileup_weight',
                  'JES','JER','UES',
                  'btagSFlight_'+year,'btagSFbc_'+year,
                  'btagSFlight_correlated','btagSFbc_correlated']
@@ -251,6 +255,8 @@ def ggfvbf_rhalphabet(tmpdir,
     if '2018' not in year:
         exp_systs += ['L1Prefiring']
     mu_exp_systs = exp_systs + ['muon_ID_'+yearstr+'_value','muon_ISO_'+yearstr+'_value','muon_TRIGNOISO_'+yearstr+'_value']
+
+    exp_systs += ['jet_trigger']
 
     sys_ddxeffbb = rl.NuisanceParameter('CMS_eff_bb_{}'.format(year), 'lnN')
     sys_ddb_pt_1 = rl.NuisanceParameter('CMS_hbb_ddb_1_{}'.format(year), 'lnN')
@@ -326,7 +332,7 @@ def ggfvbf_rhalphabet(tmpdir,
 
     validbins = {}
 
-    cats = ['vbf']
+    cats = ['ggf','vbf']
     ncat = len(cats)
 
     Nfail_qcd_MC = 0
@@ -497,7 +503,7 @@ def ggfvbf_rhalphabet(tmpdir,
                     mask = validbins[cat][ptbin]
                     failCh.mask = mask
                     # blind bins 9-13                                                                                              
-                    mask[9:14] = False    
+#                    mask[9:14] = False    
                     passCh.mask = mask
 
                     ch = rl.Channel('ptbin%dmjjbin%d%s%s%s' % (ptbin, mjjbin, cat, region, year))
@@ -545,8 +551,11 @@ def ggfvbf_rhalphabet(tmpdir,
 
                         if do_systematics:
 
-                            # MC stat 
-                            sample.autoMCStats(lnN=True)
+                            # MC stat    
+#                            if sName in ['Wjets','Zjets','Zjetsbb','EWKW','EWKZ','EWKZbb','ggF','VBF']:
+#                                sample.autoMCStats()
+#                            else:
+#                                sample.autoMCStats(lnN=True)
 
                             # Experimental systematics #######################################
                             
@@ -705,6 +714,11 @@ def ggfvbf_rhalphabet(tmpdir,
                             # END if do_systematics
 
                         ch.addSample(sample)
+                        
+                    # END loop over MC samples 
+
+                    if do_systematics:
+                        ch.autoMCStats()
 
                     data_obs = get_template('data', isPass, binindex+1, cat+'_', obs=msd, syst='nominal')
 
@@ -764,7 +778,6 @@ def ggfvbf_rhalphabet(tmpdir,
                     tqqfail.setParamEffect(tqqnormSF, 1 * tqqnormSF)
                     
     kfactor_qcd = 1.0*Nfail_data/Nfail_qcd_MC
-    print(kfactor_qcd)
 
     # Fill in muon CR
     if do_muon_CR:
@@ -795,7 +808,9 @@ def ggfvbf_rhalphabet(tmpdir,
                 sample.setParamEffect(sys_lumi_cor_1718, lumi[year[:4]]['correlated_20172018'])
 
                 if do_systematics:
-                    sample.autoMCStats(lnN=True)
+
+                    
+#                    sample.autoMCStats(lnN=True)
 
                     sample.setParamEffect(sys_eleveto, 1.005)
                     sample.setParamEffect(sys_tauveto, 1.05)
@@ -832,6 +847,9 @@ def ggfvbf_rhalphabet(tmpdir,
                 ch.addSample(sample)
 
             # END loop over MC samples
+
+            if do_systematics:
+                ch.autoMCStats()
 
             data_obs = one_bin(get_template('muondata', isPass, -1, '', obs=msd, syst='nominal', muon=True))
             ch.setObservation(data_obs, read_sumw2=True)

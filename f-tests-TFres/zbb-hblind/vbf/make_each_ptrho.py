@@ -14,7 +14,7 @@ if __name__ == '__main__':
         year = "2018"
 
     for pt in range(0,1):
-        for rho in range(0,3):
+        for rho in range(0,4):
             print("pt = "+str(pt)+", rho = "+str(rho))
             # Make the directory and go there
             thedir = "pt"+str(pt)+"rho"+str(rho)
