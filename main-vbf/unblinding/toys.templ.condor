@@ -1,0 +1,17 @@
+#!/usr/bin/env condor_submit
+
+executable              = run-toys.sh
+arguments               = SUBMITARGS
+should_transfer_files   = YES
+transfer_input_files    = TRANSFERFILES
+when_to_transfer_output = ON_EXIT_OR_EVICT
+request_memory          = 4000
+#use_x509userproxy       = true
+#x509userproxy           = /uscms/home/jennetd/x509up_u46881
+
+output                  = logs-toys/PREFIX.out
+error                   = logs-toys/PREFIX.err
+log                     = logs-toys/PREFIX.log
+
+Queue 1 
+
