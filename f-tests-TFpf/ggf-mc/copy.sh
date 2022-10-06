@@ -12,9 +12,9 @@ fi
 tag=`echo $PWD | sed 's:.*/::'`
 echo $tag
 
+rm higgsCombineToys.*GoodnessOfFit.mH125*.root
 cp /eos/uscms/store/user/jennetd/f-tests-pf/ggf-mc/${year}/*/${tag}*/*.root .
 
 rm *total.root
-hadd higgsCombineToys.GenerateOnly.mH125.total.root higgsCombineToys.GenerateOnly.mH125.*.root
 hadd higgsCombineToys.baseline.GoodnessOfFit.mH125.total.root higgsCombineToys.baseline.GoodnessOfFit.mH125.*.root
 hadd higgsCombineToys.alternative.GoodnessOfFit.mH125.total.root higgsCombineToys.alternative.GoodnessOfFit.mH125.*.root

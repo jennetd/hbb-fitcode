@@ -14,7 +14,7 @@ if __name__ == '__main__':
         year = "2018"
 
     for pt in range(0,3):
-        for rho in range(3,4):
+        for rho in range(0,3):
 
             print("pt = "+str(pt)+", rho = "+str(rho))
 
@@ -47,18 +47,8 @@ if __name__ == '__main__':
             os.system("./build.sh")
             os.chdir("../../")
 
-            # Run the first fit
-            combine_cmd = "combineTool.py -M MultiDimFit -m 125 -d output/testModel_"+year+"/model_combined.root --saveWorkspace \
-            --setParameters r=0 --freezeParameters r -n \"Snapshot\" \
-            --robustFit=1 --cminDefaultMinimizerStrategy 0"
-            os.system(combine_cmd)
-
             # Run the goodness of fit
-            combine_cmd = "combineTool.py -M GoodnessOfFit -m 125 -d higgsCombineSnapshot.MultiDimFit.mH125.root \
-            --snapshotName MultiDimFit --bypassFrequentistFit \
-            --setParameters r=0 --freezeParameters r \
-            -n \"Observed\" --algo \"saturated\" \
-            --cminDefaultMinimizerStrategy 0"  
+            combine_cmd = "combine -M GoodnessOfFit -m 125 -d output/testModel_"+year+"/model_combined.root --setParameters r=0 -n Observed --algo saturated"
             os.system(combine_cmd)
 
             os.chdir("../")
