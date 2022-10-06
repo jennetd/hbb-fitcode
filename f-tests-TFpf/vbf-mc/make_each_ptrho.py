@@ -25,7 +25,7 @@ if __name__ == '__main__':
             os.chdir(thedir)
 
             # Link what you need
-            os.system("ln -s ../../../../main-vbf/prefit30-qcd/"+year+"-prefit/signalregion.root .")
+            os.system("ln -s ../../../../main-vbf/prefit/"+year+"-prefit/signalregion.root .")
             os.system("ln -s ../../make_cards_qcd.py .")
 
             # Create your json files of initial values
