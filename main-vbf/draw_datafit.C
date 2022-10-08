@@ -15,19 +15,23 @@ void muoncr(bool pass, bool log=true){
   // Get the year and prefit/postfit/obs from the running directory                                                                                                      
   string thisdir = gSystem->pwd();
 
-  string year = "2016";
-  string year_string = "16.8/fb, 2016";
+  string year = "";
+  string year_string = "137/fb, Run 2";
   double rZbb = 1;
 
   if(thisdir.find("2016APV") != std::string::npos){
     year = "2016APV";
     year_string = "19.5/fb, 2016 APV";
   }
-  if(thisdir.find("2017") != std::string::npos){
+  else if(thisdir.find("2016") != std::string::npos){
+    year = "2016";
+    year_string = "16.8/fb, 2016";
+  }
+  else if(thisdir.find("2017") != std::string::npos){
     year = "2017";
     year_string = "41.5/fb, 2017";
   }
-  if(thisdir.find("2018") != std::string::npos){
+  else if(thisdir.find("2018") != std::string::npos){
     year = "2018";
     year_string = "59.2/fb, 2018";
   }
@@ -299,23 +303,25 @@ void draw(int index, bool pass, bool is_ggf, bool log=true){
   // Get the year and prefit/postfit/obs from the running directory
   string thisdir = gSystem->pwd();
 
-  string year = "2016";
-  string year_string = "16.8/fb, 2016";
+  string year ="";
+  string year_string = "137/fb, Run 2";
   double rZbb = 1;
 
   if(thisdir.find("2016APV") != std::string::npos){
     year = "2016APV";
     year_string = "19.5/fb, 2016 APV";
   }
-  if(thisdir.find("2017") != std::string::npos){
+  else if(thisdir.find("2016") != std::string::npos){
+    year = "2016";
+    year_string = "16.8/fb, 2016";
+  }
+  else if(thisdir.find("2017") != std::string::npos){
     year = "2017";
     year_string = "41.5/fb, 2017";
-    rZbb = 1;
   }
-  if(thisdir.find("2018") != std::string::npos){
+  else if(thisdir.find("2018") != std::string::npos){
     year = "2018";
     year_string = "59.2/fb, 2018";
-    rZbb = 1;
   }
 
   string asimov = "Observed";
@@ -658,25 +664,25 @@ void draw(int index, bool pass, bool is_ggf, bool log=true){
 void draw_datafit(){
 
   for(int i=0; i<6; i++){
-    draw(i,0,1,1);
-    draw(i,1,1,1);
+    //    draw(i,0,1,1);
+    //    draw(i,1,1,1);
 
     draw(i,0,1,0);
     draw(i,1,1,0);
   }
 
   for(int i=0; i<2; i++){
-    draw(i,0,0,1);
-    draw(i,1,0,1);
+    //    draw(i,0,0,1);
+    //    draw(i,1,0,1);
 
     draw(i,0,0,0);
     draw(i,1,0,0);
   }
 
-  muoncr(0,1);
-  muoncr(1,1);
+  //  muoncr(0,1);
+  //  muoncr(1,1);
 
-  muoncr(0,0);                                                                                                                                                         
+  muoncr(0,0);                                                                                                
   muoncr(1,0); 
 
   return 0;

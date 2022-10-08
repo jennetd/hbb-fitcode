@@ -6,14 +6,16 @@ import argparse
 def gen_toys(ntoys, seed=123456):
     infile = "higgsCombineSnapshot.MultiDimFit.mH125.root"
 
-    combine_cmd = "combineTool.py -M GenerateOnly -m 125 -d " + infile + " --snapshotName MultiDimFit --bypassFrequentistFit --setParameters rggF=1,rVBF=1 -n \"Toys\" -t "+str(ntoys)+" --saveToys --seed "+str(seed)
+    combine_cmd = "combineTool.py -M GenerateOnly -m 125 -d " + infile + " -n \"Toys\" -t " + str(ntoys) + " --saveToys --seed "+str(seed) + " --toysFrequentist --bypassFrequentistFit --snapshotName MultiDimFit"
 
     os.system(combine_cmd)
 
 def GoF(ntoys, seed=123456):
     infile = "higgsCombineSnapshot.MultiDimFit.mH125.root"
 
-    combine_cmd = "combineTool.py -M GoodnessOfFit -m 125 -d " + infile + " --snapshotName MultiDimFit --bypassFrequentistFit \--setParameters rggF=1,rVBF=1 -n \"Toys" + "\" -t " + str(ntoys) + " --algo \"saturated\" --toysFile higgsCombineToys.GenerateOnly.mH125."+str(seed)+".root --seed "+str(seed)
+#    combine_cmd = "combine -M GoodnessOfFit " + infile + " --algo=saturated -t " + str(ntoys) + " -s "+str(seed)+" --toysFrequentist"
+
+    combine_cmd = "combineTool.py -M GoodnessOfFit -m 125 -d " + infile + " -n \"Toys" + "\" -t " + str(ntoys) + " --algo \"saturated\" --toysFile higgsCombineToys.GenerateOnly.mH125."+str(seed)+".root --seed "+str(seed)+" --snapshotName MultiDimFit"
     os.system(combine_cmd)
 
 if __name__ == '__main__':

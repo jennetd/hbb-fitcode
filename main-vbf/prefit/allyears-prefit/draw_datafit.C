@@ -15,20 +15,21 @@ void draw(int index, bool pass, bool is_ggf, string year, bool log=true){
   // Get the year and prefit/postfit/obs from the running directory
   string thisdir = gSystem->pwd();
 
-  string year_string = "137/fb, Run 2";
-  double rZbb = 1;
 
-  if(year=="2016"){
-    year_string = "35.9/fb, 2016";
-    rZbb = 1;
+  string year_string = "";
+  double rZbb = 1;
+    
+  if(year == "2016APV"){
+    year_string = "19.5/fb, 2016 APV";
+  }
+  if( year == "2016"){
+    year_string = "16.8/fb, 2016";
   }
   if(year=="2017"){
     year_string = "41.5/fb, 2017";
-    rZbb = 1;
   }
   if(year=="2018"){
-    year_string = "59.9/fb, 2018";
-    rZbb = 1;
+    year_string = "59.2/fb, 2018";
   }
 
   string asimov = "Observed";
@@ -157,12 +158,14 @@ void draw(int index, bool pass, bool is_ggf, string year, bool log=true){
 
   /* Z + jets */
   TH1D* Zjets = (TH1D*)f->Get((histdirname+"Zjets").c_str());
+  Zjets->Add((TH1D*)f->Get((histdirname+"EWKZ").c_str()));
   Zjets->Scale(7.0);
   Zjets->SetLineColor(kBlack);
   Zjets->SetFillColor(kAzure+8);
 
   /* Z(bb) + jets */
   TH1D* Zjetsbb = (TH1D*)f->Get((histdirname+"Zjetsbb").c_str());
+  Zjetsbb->Add((TH1D*)f->Get((histdirname+"EWKZbb").c_str()));
   Zjetsbb->Scale(7.0);
   Zjetsbb->Scale(rZbb);
   Zjetsbb->SetLineColor(kBlack);
@@ -170,6 +173,7 @@ void draw(int index, bool pass, bool is_ggf, string year, bool log=true){
 
   /* W + jets */
   TH1D* Wjets = (TH1D*)f->Get((histdirname+"Wjets").c_str());
+  Wjets->Add((TH1D*)f->Get((histdirname+"EWKW").c_str()));
   Wjets->Scale(7.0);
   Wjets->SetLineColor(kBlack);
   Wjets->SetFillColor(kGray);
@@ -320,21 +324,21 @@ void draw(int index, bool pass, bool is_ggf, string year, bool log=true){
 
 void draw_datafit(){
 
-  vector<string> years = {"2016","2017","2018"};
+  vector<string> years = {"2016APV","2016","2017","2018"};
 
   for(int j=0; j<years.size(); j++){
 
     for(int i=0; i<6; i++){
-      draw(i,0,1,years.at(j),1);
-      draw(i,1,1,years.at(j),1);
+      //      draw(i,0,1,years.at(j),1);
+      //      draw(i,1,1,years.at(j),1);
       
       draw(i,0,1,years.at(j),0);
       draw(i,1,1,years.at(j),0);
     }
     
     for(int i=0; i<2; i++){
-      draw(i,0,0,years.at(j),1);
-      draw(i,1,0,years.at(j),1);
+      //      draw(i,0,0,years.at(j),1);
+      //      draw(i,1,0,years.at(j),1);
 
       draw(i,0,0,years.at(j),0);
       draw(i,1,0,years.at(j),0);

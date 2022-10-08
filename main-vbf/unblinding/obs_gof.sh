@@ -10,8 +10,9 @@ fi
 
 modelfile=output/testModel${year}/model_combined.root
 
-combineTool.py -M MultiDimFit -m 125 -d output/testModel${year}/model_combined.root --saveWorkspace -P rggF -P rVBF --floatOtherPOIs=0 -n Snapshot --robustFit=1 --setParameters rVBF=1,rggF=1 --verbose 9
+#combine -M MultiDimFit output/testModel${year}/model_combined.root -m 125 --saveWorkspace -n Snapshot --robustFit=1 --setParameters rggF=1,rVBF=1 --freezeParameters rggF,rVBF
 
-# Run the goodness of fit                                                                     
-combineTool.py -M GoodnessOfFit -m 125 -d higgsCombineSnapshot.MultiDimFit.mH125.root -n Observed --snapshotName MultiDimFit --bypassFrequentistFit --algo "saturated" --setParameters rVBF=1,rggF=1 --verbose 9
+combine -M GoodnessOfFit output/testModel${year}/model_combined.root -m 125 --algo=saturated --verbose=9 -t 10 --toysFrequentist
 
+
+#--snapshotName=MultiDimFit --verbose=9 --bypassFrequentistFit --toysFrequentist

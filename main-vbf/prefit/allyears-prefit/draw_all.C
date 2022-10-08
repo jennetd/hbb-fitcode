@@ -15,7 +15,7 @@ void draw(bool pass, bool is_ggf, bool log=true){
   // Get the year and prefit/postfit/obs from the running directory
   string thisdir = gSystem->pwd();
 
-  string year_string = "137/fb (13 TeV)";
+  string year_string = "138/fb (13 TeV)";
   double rZbb = 1;
 
   string asimov = "Observed";
@@ -24,7 +24,7 @@ void draw(bool pass, bool is_ggf, bool log=true){
   if(thisdir.find("prefit") !=std::string::npos)
     asimov = "prefit";
 
-  vector<string> years = {"2016","2017","2018"};
+  vector<string> years = {"2016APV","2016","2017","2018"};
 
   TFile* dataf = new TFile("2016-signalregion.root");
   TH1D* tmp = (TH1D*)dataf->Get("ggf_fail_pt1_data_nominal");
@@ -98,8 +98,11 @@ void draw(bool pass, bool is_ggf, bool log=true){
       singlet->Add((TH1D*)f->Get((histdirname+"singlet").c_str()));
       ttbar->Add((TH1D*)f->Get((histdirname+"ttbar").c_str()));
       Zjets->Add((TH1D*)f->Get((histdirname+"Zjets").c_str()));
+      Zjets->Add((TH1D*)f->Get((histdirname+"EWKZ").c_str()));
       Zjetsbb->Add((TH1D*)f->Get((histdirname+"Zjetsbb").c_str()));
+      Zjetsbb->Add((TH1D*)f->Get((histdirname+"EWKZbb").c_str()));
       Wjets->Add((TH1D*)f->Get((histdirname+"Wjets").c_str()));
+      Wjets->Add((TH1D*)f->Get((histdirname+"EWKW").c_str()));
       //      qcd->Add((TH1D*)f->Get((histdirname+"qcd").c_str()));
     
       TH1D* firstqcd = (TH1D*)f->Get((histdirname+"qcd").c_str());

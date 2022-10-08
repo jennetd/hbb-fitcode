@@ -1,1 +1,1 @@
-../make_cards.py
+../../make_cards.py

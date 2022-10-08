@@ -1,6 +1,4 @@
 year=""
 modelfile=output/testModel${year}/model_combined.root
 
-# Do initial fit
-combineTool.py -M Impacts -d $modelfile -m 125 --robustFit 1 --doInitialFit -t -1 --setParameters rVBF=1,rggF=1,rZbb=1
-
+combine -M MultiDimFit -m 125 output/testModel${year}/model_combined.root --setParameters rVBF=1,rggF=1 -t -1 --redefineSignalPOI rVBF,rggF,rZbb --saveWorkspace -n "_Total"

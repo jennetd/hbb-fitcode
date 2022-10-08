@@ -1,5 +1,5 @@
 
-string year_string = "137/fb (13 TeV)";
+string year_string = "138/fb (13 TeV)";
 
 vector<double> read_from_file(string poi, string filestring){
 
@@ -38,17 +38,17 @@ vector<double> read_from_file(string poi, string filestring){
   for(int i=0; i<vals.size(); i++){
     cout << vals.at(i) << endl;
   }
-  /*
+
   vals.push_back(2);
   vals.push_back(3);
   vals.push_back(4);
-  */
+
   return vals;
 }
 
 TGraphAsymmErrors* get_total(string poi){
 
-  vector<double> total = read_from_file(poi,"../allyears-prefit/muvals.txt");
+  vector<double> total = read_from_file(poi,"../allyears-prefit/logs/fit_batch.out");
   
   const int n = 2;
   double center[n] = {total.at(0),total.at(0)};
@@ -62,8 +62,6 @@ TGraphAsymmErrors* get_total(string poi){
 }
 
 TGraphAsymmErrors* get_VBF_table(){
-
-  //  vector<double> total = read_from_file("rVBF","../allyears-prefit/muvals.txt");
 
   vector<double> bin7 = read_from_file("rVBF7","logs/fit_batch.out");
   vector<double> bin8 = read_from_file("rVBF8","logs/fit_batch.out");

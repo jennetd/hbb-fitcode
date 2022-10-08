@@ -9,7 +9,10 @@ def main():
     year = "prefit"
     yearstr = ""
     thisdir = os.getcwd()
-    if "2016" in thisdir:
+    if "2016APV" in thisdir:
+        year = "2016APV_prefit"
+        yearstr = "_2016APV"
+    elif "2016" in thisdir:
         year = "2016-prefit"
         yearstr = "_2016"
     elif "2017" in thisdir:
@@ -49,7 +52,7 @@ def main():
     frozen["AllExp"]="rgx{CMS_hbb_eff.*},rgx{CMS_res_j.*},rgx{CMS_scale_j.*},rgx{CMS_ues_j.*},rgx{CMS_hbb_scale.*},rgx{CMS_hbb_smear.*},rgx{.*mcstat},rgx{CMS_L1Prefiring.*},rgx{CMS_hbb_PU.*},rgx{CMS_.*trigger.*},rgx{CMS_.*mu.*},rgx{CMS_hbb_e_veto.*},rgx{CMS_hbb_tau_veto.*},rgx{CMS_hbb_btagWeight.*},rgx{CMS_hbb_vbfmucr.*},rgx{CMS_hbb_veff.*},rgx{CMS_lumi_13TeV.*},rgx{qcdparam.*}"
     frozen["AllTh"]="rgx{QCDScale_.*},rgx{pdf_.*},rgx{UEPS_.*},rgx{CMS_hbb_.*NLO},rgx{CMS_hbb_.*EW}"
 
-    for p in ["rggF"]:
+    for p in ["rggF","rVBF"]:
         for k in frozen.keys():
         
             print('Submitting '+k)

@@ -1,1 +1,1 @@
-../make_workspace.sh
+../../make_workspace.sh

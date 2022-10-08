@@ -1,3 +1,20 @@
+vector<string> systnames = {
+  "TFres",
+  "TTQ",
+  "AllExp",
+  "MCStat",
+  "DDB",
+  "JMSJMR",
+  "JESJER",
+  "qcdparam",
+  "Other",
+  "AllTh",
+  "ggFtheory",
+  "VBFtheory",
+  "VHttHtheory",
+  "Vtheory"
+};
+
 vector<double> read_from_graph(string poi, string filestring){
   
   TFile *f = new TFile(("higgsCombine"+filestring+".MultiDimFit.mH125.root").c_str());  
@@ -117,41 +134,71 @@ vector<double> read_from_file(string poi, string filestring){
   return vals;
 }
 
-void get_table(string poi){
+map<string,vector<double>> get_table(string poi){
+
+  map<string,vector<double>> table; 
 
   cout << "----------- " << poi << endl;
 
-  vector<string> systnames = {"TFres","TTQ","AllExp","MCStat","DDB","JMSJMR","JESJER","qcdparam","Other","AllTh","ggFtheory","VBFtheory","VHttHtheory","Vtheory"}; 
-
   vector<double> unc_total = read_from_graph(poi,poi);
-  cout << "Total & " << unc_total[1] << " & "<<  unc_total[0] << endl;
+  table["Total"] = unc_total;
 
   vector<double> unc_allstat = read_from_graph(poi, poi+"StatOnly");
-  cout << "AllStat & " << unc_allstat[1] <<" & " << unc_allstat[0] << endl;
+  table["AllStat"] = unc_allstat;
 
   vector<double> unc_sigextr = read_from_graph(poi, "_"+poi+"SigExtr");
-  cout << "SigExtr & " << unc_sigextr[1] <<" & " << unc_sigextr[0] << endl;
+  table["SigExtr"] = unc_sigextr;
 
   for(int i=0; i<systnames.size(); i++){
 
     vector<double> unc = read_from_graph(poi, "_"+poi+systnames.at(i));
 
-    //    cout << systnames.at(i) << ", " << unc[0] << ", " << unc[1] << endl;
-
     double delta_mu_m = sqrt(unc_total[0]*unc_total[0] - unc[0]*unc[0]);
     double delta_mu_p = sqrt(unc_total[1]*unc_total[1] - unc[1]*unc[1]);
 
-    cout << systnames.at(i) << " & " << -1*delta_mu_m << " & " << delta_mu_p << endl;
+    unc.at(0) = delta_mu_m;
+    unc.at(1) = delta_mu_p;
+    table[systnames.at(i)] = unc;
+
   }
 
-  return;
+  return table;
 
 }
  
 void syst_table(){
 
-  get_table("rVBF");
-  get_table("rggF");
+  vector<string> allsystnames = {"Total","AllStat","SigExtr"};
+  allsystnames.insert(allsystnames.end(), systnames.begin(), systnames.end());
+
+  map<string,vector<double>> vbftable = get_table("rVBF");
+  map<string,vector<double>> ggftable = get_table("rggF");
+
+  map<string,string> systtitles;
+  systtitles["Total"] = "Total";
+  systtitles["AllStat"] = "Statistical";
+  systtitles["SigExtr"] = "Signal extraction";
+  systtitles["TFres"] = "QCD estimation ($F_{res}$)";
+  systtitles["TTQ"] = "$t\bar{t}$ normalization & efficiency";
+  systtitles["AllExp"] = "Experimental";
+  systtitles["MCStat"] = "Size of simulated samples";
+  systtitles["DDB"] = "DDB tag efficiency";
+  systtitles["JMSJMR"] = "Jet mass scale & resolution";
+  systtitles["JESJER"] = "Jet energy scale & resolution";
+  systtitles["qcdparam"] = "QCD estimation ($F_{P/F}$)";
+  systtitles["Other"] = "Other";
+  systtitles["AllTh"] = "Theoretical";
+  systtitles["ggFtheory"] = "ggF modeling";
+  systtitles["VBFtheory"] = "VBF modeling";
+  systtitles["VHttHtheory"] = "Other Higgs modeling";
+  systtitles["Vtheory"]= "V+jets modeling";
+
+
+  for(int i=0; i<allsystnames.size(); i++){
+    string sys = allsystnames.at(i);
+    cout << std::setprecision(3) << systtitles[sys] << " &\t" << vbftable[sys].at(0) << " &\t" << vbftable[sys].at(1) << " &\t" << ggftable[sys].at(0) << " &\t" << ggftable[sys].at(1) << endl;
+  }
+
 
   return;
 }

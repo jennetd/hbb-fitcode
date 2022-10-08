@@ -24,8 +24,8 @@ def main():
     
     njobs = 50
 
-    if year =="allyears":
-        njobs = 200
+#    if year =="allyears":
+#        njobs = 200
 
     loc_base = os.environ['PWD']
     logdir = 'logs-toys'

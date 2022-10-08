@@ -1,5 +1,5 @@
 
-string year_string = "137/fb (13 TeV)";
+string year_string = "138/fb (13 TeV)";
 
 vector<double> read_from_file(string poi, string filestring){
 
@@ -38,17 +38,17 @@ vector<double> read_from_file(string poi, string filestring){
   for(int i=0; i<vals.size(); i++){
     cout << vals.at(i) << endl;
   }
-  /*
+
   vals.push_back(2);
   vals.push_back(3);
   vals.push_back(4);
-  */
+
   return vals;
 }
 
 TGraphAsymmErrors* get_total(string poi){
 
-  vector<double> total = read_from_file(poi,"../allyears-prefit/muvals.txt");
+  vector<double> total = read_from_file(poi,"../allyears-prefit/logs/fit_batch.out");
   
   const int n = 2;
   double center[n] = {total.at(0),total.at(0)};
@@ -62,8 +62,6 @@ TGraphAsymmErrors* get_total(string poi){
 }
 
 TGraphAsymmErrors* get_VBF_table(){
-
-  //  vector<double> total = read_from_file("rVBF","../allyears-prefit/muvals.txt");
 
   vector<double> bin7 = read_from_file("rVBF7","logs/fit_batch.out");
   vector<double> bin8 = read_from_file("rVBF8","logs/fit_batch.out");
@@ -85,16 +83,16 @@ TGraphAsymmErrors* get_ggF_table(){
 
   vector<double> bin1 = read_from_file("rggF1","logs/fit_batch.out");
   vector<double> bin2 = read_from_file("rggF2","logs/fit_batch.out");
-  vector<double> bin3 = {0,0,0};//read_from_file("rggF3","logs/fit_batch.out");
+  vector<double> bin3 = read_from_file("rggF3","logs/fit_batch.out");
   vector<double> bin4 = read_from_file("rggF4","logs/fit_batch.out");
-  vector<double> bin5 = {0,0,0};//read_from_file("rggF5","logs/fit_batch.out");
-  vector<double> bin6 = {0,0,0};//read_from_file("rggF6","logs/fit_batch.out");
-  vector<double> vbf = read_from_file("rggF7","logs/fit_batch.out");  
-  const int n = 7;
-  double center[n] = {bin1.at(0),bin2.at(0),bin3.at(0),bin4.at(0),bin5.at(0),bin6.at(0),vbf.at(0)};
-  double up_unc[n] = {bin1.at(2),bin2.at(2),bin3.at(2),bin4.at(2),bin5.at(2),bin6.at(2),vbf.at(2)};
-  double do_unc[n] = {bin1.at(1),bin2.at(1),bin3.at(1),bin4.at(1),bin5.at(1),bin6.at(1),vbf.at(1)};
-  double x[n] = {1,2,3,4,5,6,7};
+  vector<double> bin5 = read_from_file("rggF5","logs/fit_batch.out");
+  vector<double> bin6 = read_from_file("rggF6","logs/fit_batch.out");
+  
+  const int n = 6;
+  double center[n] = {bin1.at(0),bin2.at(0),bin3.at(0),bin4.at(0),bin5.at(0),bin6.at(0)};
+  double up_unc[n] = {bin1.at(2),bin2.at(2),bin3.at(2),bin4.at(2),bin5.at(2),bin6.at(2)};
+  double do_unc[n] = {bin1.at(1),bin2.at(1),bin3.at(1),bin4.at(1),bin5.at(1),bin6.at(1)};
+  double x[n] = {1,2,3,4,5,6};
   
   TGraphAsymmErrors* g = new TGraphAsymmErrors(n,x,center,0,0,do_unc,up_unc);
   
@@ -191,10 +189,10 @@ void draw_ggF(){
   h->Fill("[600, 675] GeV",0);
   h->Fill("[675, 800] GeV",0);
   h->Fill("[800, 1200] GeV",0);
-  //  h->Fill("VBF category",0);
+  h->Fill("VBF category",0);
 
   h->GetXaxis()->SetTitle("p_{T} bin in ggF category");
-  //  h->GetXaxis()->SetRangeUser(0.5,6.5);
+  h->GetXaxis()->SetRangeUser(0.5,6.5);
   h->GetXaxis()->SetTitleSize(textsize1);
   h->GetXaxis()->SetLabelSize(textsize1);
   h->GetXaxis()->SetTitleOffset(1.5);
@@ -251,8 +249,8 @@ void draw_ggF(){
 
 void mu_table(){
 
-  //  draw_VBF();
-  
+  //draw_VBF();
+
   draw_ggF();
 
   return;

@@ -63,7 +63,7 @@ void draw_PFratio_QCDMC(){
 	
 	gPad->SetLeftMargin(0.15);
 	
-	frame1->SetMaximum(0.15);
+	frame1->SetMaximum(0.20);
 	frame1->SetMinimum(0);
 	
 	string title;
