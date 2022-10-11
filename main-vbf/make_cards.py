@@ -408,7 +408,7 @@ def ggfvbf_rhalphabet(tmpdir,
                     failObs = failCh.getObservation()
                     passObs = passCh.getObservation()
                 
-                    qcdparams = np.array([rl.IndependentParameter('qcdparam_'+cat+'_ptbin%d_msdbin%d' % (ptbin, i), 0) for i in range(msd.nbins)])
+                    qcdparams = np.array([rl.IndependentParameter('qcdparam_ptbin%dmjjbin%d%s%s_%d' % (ptbin, mjjbin, cat, year, i), 0) for i in range(msd.nbins)])
                     sigmascale = 10.
                     scaledparams = failObs * (1 + sigmascale/np.maximum(1., np.sqrt(failObs)))**qcdparams
                 
@@ -475,7 +475,7 @@ def ggfvbf_rhalphabet(tmpdir,
                                        ['pt', 'rho'], 
                                        basis='Bernstein',
                                        init_params=initial_vals_data,
-                                       limits=(-20,20), 
+                                       limits=(-50,50), 
                                        coefficient_transform=None)
 
         tf_dataResidual_params = tf_dataResidual(ptscaled, rhoscaled)
@@ -551,7 +551,7 @@ def ggfvbf_rhalphabet(tmpdir,
 
                         if do_systematics:
 
-#                            sample.autoMCStats(lnN=True)
+                            sample.autoMCStats(lnN=True)
 
                             # Experimental systematics #######################################
                             
@@ -710,7 +710,10 @@ def ggfvbf_rhalphabet(tmpdir,
                             # END if do_systematics
 
                         ch.addSample(sample)
-                        
+ 
+#                        if do_systematics:
+#                            ch.autoMCStats()
+                       
                     # END loop over MC samples 
 
                     data_obs = get_template('data', isPass, binindex+1, cat+'_', obs=msd, syst='nominal')
@@ -727,7 +730,7 @@ def ggfvbf_rhalphabet(tmpdir,
                 failCh = model['ptbin%dmjjbin%d%sfail%s' % (ptbin, mjjbin, cat, year)]
                 passCh = model['ptbin%dmjjbin%d%spass%s' % (ptbin, mjjbin, cat, year)]
 
-                qcdparams = np.array([rl.IndependentParameter('qcdparam_'+cat+'_ptbin%d_msdbin%d' % (ptbin, i), 0) for i in range(msd.nbins)])
+                qcdparams = np.array([rl.IndependentParameter('qcdparam_ptbin%dmjjbin%d%s%s_%d' % (ptbin, mjjbin, cat, year, i), 0) for i in range(msd.nbins)])
                 initial_qcd = failCh.getObservation()[0].astype(float)  # was integer, and numpy complained about subtracting float from it
 
                 for sample in failCh:
@@ -835,6 +838,9 @@ def ggfvbf_rhalphabet(tmpdir,
                     # END if do_systematics
 
                 ch.addSample(sample)
+                
+#                if do_systematics:
+#                    ch.autoMCStats()
 
             # END loop over MC samples
 

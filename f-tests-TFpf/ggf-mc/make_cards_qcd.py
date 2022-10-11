@@ -205,7 +205,7 @@ def ggfvbf_rhalphabet(tmpdir,
                     failObs = failCh.getObservation()
                     passObs = passCh.getObservation()
                 
-                    qcdparams = np.array([rl.IndependentParameter('qcdparam_'+cat+'_ptbin%d_msdbin%d' % (ptbin, i), 0) for i in range(msd.nbins)])
+                    qcdparams = np.array([rl.IndependentParameter('qcdparam_ptbin%dmjjbin%d%s%s_%d' % (ptbin, mjjbin, cat, year, i), 0) for i in range(msd.nbins)])
                     sigmascale = 10.
                     scaledparams = failObs * (1 + sigmascale/np.maximum(1., np.sqrt(failObs)))**qcdparams
                 
@@ -329,7 +329,7 @@ def ggfvbf_rhalphabet(tmpdir,
                 failCh = model['ptbin%dmjjbin%d%sfail%s' % (ptbin, mjjbin, cat, year)]
                 passCh = model['ptbin%dmjjbin%d%spass%s' % (ptbin, mjjbin, cat, year)]
 
-                qcdparams = np.array([rl.IndependentParameter('qcdparam_'+cat+'_ptbin%d_msdbin%d' % (ptbin, i), 0) for i in range(msd.nbins)])
+                qcdparams = np.array([rl.IndependentParameter('qcdparam_ptbin%dmjjbin%d%s%s_%d' % (ptbin, mjjbin, cat, year, i), 0) for i in range(msd.nbins)])
                 initial_qcd = failCh.getObservation()[0].astype(float)  # was integer, and numpy complained about subtracting float from it                                
                 if np.any(initial_qcd < 0.):
                     raise ValueError('initial_qcd negative for some bins..', initial_qcd)
