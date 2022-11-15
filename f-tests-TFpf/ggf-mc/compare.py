@@ -5,7 +5,7 @@ import argparse
 
 def GoF(infile, ntoys, seed=123456):
 
-    combine_cmd = "combine -M GoodnessOfFit -m 125 -d "+infile+" -n Toys -t " + str(ntoys) + " --algo saturated --seed " + str(seed)
+    combine_cmd = "combine -M GoodnessOfFit -m 125 -d "+infile+" -n Toys -t " + str(ntoys) + " --algo saturated --seed " + str(seed) + " --toysFreq"
     os.system(combine_cmd)
 
 if __name__ == '__main__':
