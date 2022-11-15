@@ -43,7 +43,7 @@ def smass(sName):
         _mass = 125.
     elif sName in ['Wjets','EWKW','ttbar','singlet','VV']:
         _mass = 80.379
-    elif sName in ['Zjets','Zjetsbb','EWKZ','EWKZbb']:
+    elif sName in ['Zjets','Zjetsbb','EWKZ']:
         _mass = 91.
     else:
         raise ValueError("What is {}".format(sName))
@@ -85,6 +85,7 @@ def get_template(sName, passed, ptbin, cat, obs, syst, muon=False):
     for i in range(1,h.GetNbinsX()+1):
 
         if h.GetBinContent(i) < 0:
+#            print('negative bin',name)
             sumw += [0]
             sumw2 += [0]
         else:
@@ -206,8 +207,8 @@ def ggfvbf_rhalphabet(tmpdir,
         lumi = json.load(f)
 
     # TT params
-    tqqeffSF = rl.IndependentParameter('tqqeffSF_{}'.format(year), 1., -10, 50)
-    tqqnormSF = rl.IndependentParameter('tqqnormSF_{}'.format(year), 1., -10, 50)
+    tqqeffSF = rl.IndependentParameter('tqqeffSF_{}'.format(year), 1., -50, 50)
+    tqqnormSF = rl.IndependentParameter('tqqnormSF_{}'.format(year), 1., -50, 50)
 
     # Systematics
     sys_lumi_uncor = rl.NuisanceParameter('CMS_lumi_13TeV_{}'.format(year[:4]), 'lnN')
@@ -396,7 +397,7 @@ def ggfvbf_rhalphabet(tmpdir,
                                       ['pt', 'rho'], 
                                       basis='Bernstein',
                                       init_params=initial_vals,
-                                      limits=(-10, 10), coefficient_transform=None)
+                                      limits=(-50, 50), coefficient_transform=None)
 
             tf_MCtempl_params = qcdeff * tf_MCtempl(ptscaled, rhoscaled)
 
@@ -408,7 +409,7 @@ def ggfvbf_rhalphabet(tmpdir,
                     failObs = failCh.getObservation()
                     passObs = passCh.getObservation()
                 
-                    qcdparams = np.array([rl.IndependentParameter('qcdparam_ptbin%dmjjbin%d%s%s_%d' % (ptbin, mjjbin, cat, year, i), 0) for i in range(msd.nbins)])
+                    qcdparams = np.array([rl.IndependentParameter('qcdparam_ptbin%dmjjbin%d%s%s_%d' % (ptbin, mjjbin, cat, year, i), 0, -50, 50) for i in range(msd.nbins)])
                     sigmascale = 10.
                     scaledparams = failObs * (1 + sigmascale/np.maximum(1., np.sqrt(failObs)))**qcdparams
                 
@@ -485,7 +486,7 @@ def ggfvbf_rhalphabet(tmpdir,
     model = rl.Model('testModel_'+year)
 
     # exclude QCD from MC samps
-    samps = ['ggF','VBF','WH','ZH','ttH','Wjets','Zjets','Zjetsbb','EWKW','EWKZ','EWKZbb','ttbar','singlet','VV']
+    samps = ['ggF','VBF','WH','ZH','ttH','Wjets','Zjets','Zjetsbb','EWKW','EWKZ','ttbar','singlet','VV']
     sigs = ['ggF','VBF']
 
     for cat in cats:
@@ -502,7 +503,7 @@ def ggfvbf_rhalphabet(tmpdir,
                     # drop bins outside rho validity                                                
                     mask = validbins[cat][ptbin]
                     failCh.mask = mask
-                    # blind bins 9-13                                                                                              
+                    # blind bins 9-13                                                                        
 #                    mask[9:14] = False    
                     passCh.mask = mask
 
@@ -551,7 +552,7 @@ def ggfvbf_rhalphabet(tmpdir,
 
                         if do_systematics:
 
-                            sample.autoMCStats(lnN=True)
+                            sample.autoMCStats(lnN=True)    
 
                             # Experimental systematics #######################################
                             
@@ -691,29 +692,28 @@ def ggfvbf_rhalphabet(tmpdir,
                                     sample.setParamEffect(fsr_ttH,eff_fsr_up,eff_fsr_do)
                                     sample.setParamEffect(isr_ttH,eff_isr_up,eff_isr_do)
 
-                            # Add SFs last!
-                            # DDB SF 
-                            if sName in ['ggF','VBF','WH','ZH','ggZH','ttH','Zjetsbb','EWKZbb']:
-                                sf,sfunc_up,sfunc_down = passfailSF(isPass, sName, binindex, cat+'_', msd, mask, 1, SF[year]['BB_SF_UP'], SF[year]['BB_SF_DOWN'])
-                                sample.scale(sf)
+                        # END if do_systematics  
+
+                        # Add SFs last!
+                        # DDB SF 
+                        if sName in ['ggF','VBF','WH','ZH','ggZH','ttH','Zjetsbb']:
+                            sf,sfunc_up,sfunc_down = passfailSF(isPass, sName, binindex, cat+'_', msd, mask, 1, SF[year]['BB_SF_UP'], SF[year]['BB_SF_DOWN'])
+                            sample.scale(sf)
+                            if do_systematics:
                                 sample.setParamEffect(sys_ddxeffbb, sfunc_up, sfunc_down)
                                 if cat == 'ggf':                                                                               
                                     sample.setParamEffect(sys_ddb_pt[ptbin],1.15)  
 
-                            # N2DDT SF (V SF)                                                     
-                            sample.scale(SF[year]['V_SF'])
+                        # N2DDT SF (V SF)                                                     
+                        sample.scale(SF[year]['V_SF'])
+                        if do_systematics:
                             effect = 1.0 + SF[year]['V_SF_ERR'] / SF[year]['V_SF']
                             sample.setParamEffect(sys_veff,effect)
                             if cat == 'ggf':
                                 sample.setParamEffect(sys_veff_pt[ptbin],1.10)
 
-                            # END if do_systematics
-
                         ch.addSample(sample)
  
-#                        if do_systematics:
-#                            ch.autoMCStats()
-                       
                     # END loop over MC samples 
 
                     data_obs = get_template('data', isPass, binindex+1, cat+'_', obs=msd, syst='nominal')
@@ -730,14 +730,15 @@ def ggfvbf_rhalphabet(tmpdir,
                 failCh = model['ptbin%dmjjbin%d%sfail%s' % (ptbin, mjjbin, cat, year)]
                 passCh = model['ptbin%dmjjbin%d%spass%s' % (ptbin, mjjbin, cat, year)]
 
-                qcdparams = np.array([rl.IndependentParameter('qcdparam_ptbin%dmjjbin%d%s%s_%d' % (ptbin, mjjbin, cat, year, i), 0) for i in range(msd.nbins)])
+                qcdparams = np.array([rl.IndependentParameter('qcdparam_ptbin%dmjjbin%d%s%s_%d' % (ptbin, mjjbin, cat, year, i), 0, -50, 50) for i in range(msd.nbins)])
                 initial_qcd = failCh.getObservation()[0].astype(float)  # was integer, and numpy complained about subtracting float from it
 
                 for sample in failCh:
                     initial_qcd -= sample.getExpectation(nominal=True)
 
                 if np.any(initial_qcd < 0.):
-                    raise ValueError('initial_qcd negative for some bins..', initial_qcd)
+                    initial_qcd[np.where(initial_qcd<0)] = 0
+                    #raise ValueError('initial_qcd negative for some bins..', initial_qcd)
 
                 sigmascale = 10  # to scale the deviation from initial                      
                 scaledparams = initial_qcd * (1 + sigmascale/np.maximum(1., np.sqrt(initial_qcd)))**qcdparams
@@ -778,7 +779,7 @@ def ggfvbf_rhalphabet(tmpdir,
     # Fill in muon CR
     if do_muon_CR:
         templates = {}
-        samps = ['QCD','Wjets','Zjets','Zjetsbb','EWKW','EWKZ','EWKZbb','ttbar','singlet','VV']
+        samps = ['QCD','Wjets','Zjets','Zjetsbb','EWKW','EWKZ','ttbar','singlet','VV']
         for region in ['pass', 'fail']:
             ch = rl.Channel('muonCR%s%s' % (region, year))
             model.addChannel(ch)
@@ -822,20 +823,25 @@ def ggfvbf_rhalphabet(tmpdir,
                         eff_up = shape_to_num(syst_up,nominal)
                         eff_do = shape_to_num(syst_do,nominal)
 
-                        sample.setParamEffect(sys_dict[sys], eff_up, eff_do)
+                        if eff_up > 0 and eff_do > 0:
+                            sample.setParamEffect(sys_dict[sys], eff_up, eff_do)
+                        else:
+                            sample.setParamEffect(sys_dict[sys], max(eff_up,eff_do))
 
-                    # DDB SF                                                                                  
-                    if sName in ['ggF','VBF','WH','ZH','ggZH','ttH','Zjetsbb','EWKZbb']:
-                        sf,sfunc_up,sfunc_down = passfailSF(isPass, sName, -1, '', msd, mask, 1, SF[year]['BB_SF_UP'], SF[year]['BB_SF_DOWN'], muon = True)
-                        sample.scale(sf)
+                # END if do_systematics 
+
+                # DDB SF                                                                                  
+                if sName in ['ggF','VBF','WH','ZH','ggZH','ttH','Zjetsbb']:
+                    sf,sfunc_up,sfunc_down = passfailSF(isPass, sName, -1, '', msd, mask, 1, SF[year]['BB_SF_UP'], SF[year]['BB_SF_DOWN'], muon = True)
+                    sample.scale(sf)
+                    if do_systematics:
                         sample.setParamEffect(sys_ddxeffbb, sfunc_up, sfunc_down)
 
-                    # N2DDT SF (V SF)                                                            
-                    sample.scale(SF[year]['V_SF'])
+                # N2DDT SF (V SF)                                                            
+                sample.scale(SF[year]['V_SF'])
+                if do_systematics:
                     effect = 1.0 + SF[year]['V_SF_ERR'] / SF[year]['V_SF']
                     sample.setParamEffect(sys_veff,effect)
-
-                    # END if do_systematics
 
                 ch.addSample(sample)
                 
